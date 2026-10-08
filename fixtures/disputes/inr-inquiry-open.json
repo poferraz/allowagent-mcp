@@ -1,0 +1,15 @@
+{
+  "dispute_id": "PP-D-1001",
+  "create_time": "2026-10-01T10:00:00Z",
+  "update_time": "2026-10-01T10:00:00Z",
+  "dispute_life_cycle_stage": "INQUIRY",
+  "status": "OPEN",
+  "dispute_amount": { "currency_code": "USD", "value": "120.00" },
+  "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+  "buyer_response_due_date": "2026-10-21T10:00:00Z",
+  "evidences": [],
+  "links": [
+    { "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-1001/send-message", "rel": "send-message", "method": "POST" },
+    { "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-1001/escalate", "rel": "escalate", "method": "POST" }
+  ]
+}
