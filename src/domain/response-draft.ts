@@ -44,7 +44,9 @@ export function assembleDraftResponse(facts: GroundedFact[]): DraftResponse {
     }
   }
 
-  const tracking = facts.find(f => f.label.toLowerCase().includes('tracking'));
+  const tracking = facts.find(
+    f => f.label.toLowerCase().includes('tracking') || f.label.toLowerCase().includes('carrier')
+  );
   if (tracking) {
     lines.push(`Carrier record indicates: ${tracking.value}. No proof of completed delivery exists.`);
     if (tracking.sourceDocName && tracking.verbatimQuote) {
