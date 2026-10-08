@@ -1,0 +1,16 @@
+{
+  "dispute_id": "PP-D-1003",
+  "create_time": "2026-10-01T10:00:00Z",
+  "update_time": "2026-10-05T15:00:00Z",
+  "dispute_life_cycle_stage": "CHARGEBACK",
+  "status": "WAITING_FOR_BUYER_RESPONSE",
+  "dispute_amount": { "currency_code": "USD", "value": "120.00" },
+  "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+  "buyer_response_due_date": "2026-10-15T15:00:00Z",
+  "evidences": [
+    { "evidence_type": "PROOF_OF_ITEM_NOT_RECEIVED", "source": "REQUESTED_FROM_BUYER" }
+  ],
+  "links": [
+    { "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-1003/provide-evidence", "rel": "provide-evidence", "method": "POST" }
+  ]
+}

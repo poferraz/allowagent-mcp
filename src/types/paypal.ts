@@ -54,6 +54,14 @@ export interface HateoasLink {
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
 }
 
+export interface DisputeOutcome {
+  outcome_code?: string;
+  amount_refunded?: {
+    currency_code: string;
+    value: string;
+  };
+}
+
 export interface DisputeCase {
   dispute_id: string;
   create_time: string;
@@ -67,6 +75,8 @@ export interface DisputeCase {
   reason: DisputeReason;
   buyer_response_due_date?: string;
   seller_response_due_date?: string;
+  dispute_outcome?: DisputeOutcome;
   evidences?: DisputeEvidence[];
   links?: HateoasLink[];
 }
+
