@@ -23,6 +23,9 @@ Before making any changes, memorize these non-negotiable rules:
 
 ## 4. Key Directory Map
 - `src/types/` : Central types for PayPal API, domain, and AI.
-- `src/domain/` : Pure state machines and logic (dispute-machine, contradiction, question-tree).
+- `src/domain/` : Pure state machines and logic (dispute-machine, contradiction, question-tree, response-draft).
 - `src/paypal/` : API client and offline mock client.
+- `src/ui/` : UI components (CaseHeader, ChecklistMatrix, ResponseDraftView, ApprovalModal).
 - `fixtures/` : Sample JSON dispute objects and evidence texts for zero-secret testing.
+- `docs/DEMO.md` : 3-minute foolproof demo walkthrough script.
+
