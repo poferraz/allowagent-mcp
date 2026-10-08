@@ -28,7 +28,7 @@ export interface PlainLanguageAction {
   stageDescription: string;
   deadlineText: string;
   actionOwner: 'YOU' | 'SELLER' | 'PAYPAL';
-  recommendedAction: 'WAIT_FOR_SELLER' | 'SEND_MESSAGE' | 'SUBMIT_EVIDENCE' | 'ESCALATE' | 'ACCEPT_OFFER' | 'CASE_CLOSED';
+  recommendedAction: 'WAIT_FOR_SELLER' | 'SEND_MESSAGE' | 'SUBMIT_EVIDENCE' | 'ESCALATE' | 'ACCEPT_OFFER' | 'CASE_CLOSED' | 'WAIT_FOR_PAYPAL';
   guidanceText: string;
   apiAction?: 'send-message' | 'provide-evidence' | 'escalate' | 'accept-offer';
 }

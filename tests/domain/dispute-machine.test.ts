@@ -32,6 +32,19 @@ describe('Dispute State Machine', () => {
       expect(readiness.nextAction.deadlineText).toBe('No deadline pending.');
     });
 
+    it('correctly maps UNDER_REVIEW to PayPal review guidance', () => {
+      const underReviewCase: DisputeCase = {
+        ...(inrClaimBuyerWait as DisputeCase),
+        status: 'UNDER_REVIEW'
+      };
+      const readiness = deriveCaseReadiness(underReviewCase);
+      expect(readiness.nextAction.actionOwner).toBe('PAYPAL');
+      expect(readiness.nextAction.recommendedAction).toBe('WAIT_FOR_PAYPAL');
+      expect(readiness.nextAction.stageDescription).toBe('Under Review by PayPal.');
+      expect(readiness.nextAction.deadlineText).toBe('Review in progress');
+      expect(readiness.nextAction.guidanceText).toContain('PayPal is actively reviewing the evidence');
+    });
+
     it('handles open inquiry defaults with INR fallback checklist', () => {
       const readiness = deriveCaseReadiness(inrInquiryOpen as DisputeCase);
       expect(readiness.nextAction.actionOwner).toBe('YOU');

@@ -139,6 +139,14 @@ export function deriveCaseReadiness(caseData: DisputeCase): CaseReadiness {
       recommendedAction: 'CASE_CLOSED',
       guidanceText: 'This dispute has been resolved by PayPal. See outcome details below.'
     };
+  } else if (caseData.status === 'UNDER_REVIEW') {
+    nextAction = {
+      stageDescription: 'Under Review by PayPal.',
+      deadlineText: 'Review in progress',
+      actionOwner: 'PAYPAL',
+      recommendedAction: 'WAIT_FOR_PAYPAL',
+      guidanceText: 'PayPal is actively reviewing the evidence provided by both parties. A decision will typically be rendered within 10 days.'
+    };
   } else if (caseData.status === 'WAITING_FOR_BUYER_RESPONSE') {
     nextAction = {
       stageDescription: 'PayPal is waiting for your response.',
