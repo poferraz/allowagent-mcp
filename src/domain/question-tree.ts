@@ -67,7 +67,7 @@ export function getNextQuestion(ctx: QuestionContext): QuestionPrompt | null {
   if (ctx.inquiryDaysElapsed !== undefined && ctx.inquiryDaysElapsed >= 8 && ctx.inquiryDaysElapsed <= 10) {
     return {
       id: 'GUIDANCE_ACCELERATED_ESCALATION',
-      text: "Your dispute is on Day 9 of the inquiry stage — inside the Accelerated Response window.",
+      text: `Your dispute is on Day ${ctx.inquiryDaysElapsed ?? 9} of the inquiry stage — inside the Accelerated Response window.`,
       rationale: "Under PayPal Accelerated Response rules, escalating with a message sent grants 3 days for document submission before adjudication.",
       isGuidanceOnly: true,
       options: ["Continue inquiry with seller", "Review escalation to claim"]

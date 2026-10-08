@@ -72,7 +72,24 @@ describe('Adaptive Question Tree & Escalation Logic', () => {
     const nextQ = getNextQuestion(context);
     expect(nextQ?.id).toBe('GUIDANCE_ACCELERATED_ESCALATION');
     expect(nextQ?.text).toContain('Accelerated Response window');
+    expect(nextQ?.text).toContain('Day 9');
     expect(nextQ?.isGuidanceOnly).toBe(true);
+  });
+
+  it('dynamically interpolates Day 8 in Accelerated Response guidance', () => {
+    const context: QuestionContext = {
+      hasExistingDispute: true,
+      reason: 'MERCHANDISE_OR_SERVICE_NOT_RECEIVED',
+      daysSincePayment: 25,
+      inquiryDaysElapsed: 8,
+      sellerContacted: true,
+      uploadedRecords: ['order', 'tracking'],
+      deliveryScanKnown: true
+    };
+
+    const nextQ = getNextQuestion(context);
+    expect(nextQ?.id).toBe('GUIDANCE_ACCELERATED_ESCALATION');
+    expect(nextQ?.text).toContain('Day 8');
   });
 
   it('returns null when all required info is collected outside accelerated response window', () => {
