@@ -10,4 +10,5 @@
   - Task 3: Stateful PayPal Sandbox Ledger & Hybrid Gateway (9 tests passing total)
   - Task 4: 3-Vector Taint & Indirect Prompt Injection Scanner (12 tests passing total)
   - Task 5: Modular PayPal Read-vs-Write Cross-Examiner (16 tests passing total)
-- **Next Task:** Task 6 (Pure Constitutional Policy Evaluator & One-Time Recomputed Approval Gate)
+  - Task 6: Pure Constitutional Policy Evaluator & One-Time Recomputed Approval Gate (22 tests passing total)
+- **Next Task:** Task 7 (Interactive Scenario Deck & Pure Pipeline Runner)
