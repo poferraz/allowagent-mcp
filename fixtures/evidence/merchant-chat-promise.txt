@@ -1,4 +1,0 @@
-Buyer: Hi, my order #DS-88492 still hasn't arrived and tracking hasn't updated in 5 days.
-Merchant: So sorry about that! The carrier lost the package. We will issue a full refund of $120 to your original payment method today.
-Buyer: Thank you, I will watch for it.
-Merchant: You're welcome! Please allow 24-48 hours.
