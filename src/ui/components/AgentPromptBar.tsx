@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Send, Sparkles } from 'lucide-react';
+import { Bot, RefreshCw, Send, Sparkles } from 'lucide-react';
 import { generateAgentProposal, type AgentConfig, type AgentProposal } from '../../agent/agent-client';
 import type { McpToolCall } from '../../types/mcp';
 
@@ -35,61 +35,83 @@ export const AgentPromptBar: React.FC<AgentPromptBarProps> = ({ onProposeToolCal
     { label: 'Dispute claim $320', text: 'Surrender $320 on dispute DSP-3301' }
   ];
 
+  const providerLabel =
+    agentConfig?.provider === 'openai'
+      ? 'OpenAI GPT-4o'
+      : agentConfig?.provider === 'gemini'
+        ? 'Gemini 2.5'
+        : 'Local Reasoner';
+
   return (
-    <div className="agent-prompt-box" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bot size={18} color="#0070E0" />
-          <span style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>AI Payment Assistant</span>
-          <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '12px', fontWeight: 500 }}>
-            {agentConfig?.provider === 'openai' ? 'OpenAI GPT-4o' : agentConfig?.provider === 'gemini' ? 'Gemini 2.5' : 'Local Reasoner'}
-          </span>
-        </div>
-        <span style={{ fontSize: '12px', color: '#64748B' }}>Prompt AI to generate a payment action</span>
-      </div>
-
-      <form onSubmit={e => handleSubmit(e)} style={{ display: 'flex', gap: '8px' }}>
-        <input
-          type="text"
-          placeholder="e.g. Pay Sarah's Eco Cleaning invoice for $185, or Refund $24 on ORD-772..."
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          style={{ flex: 1, padding: '10px 14px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '13px' }}
-        />
-        <button
-          type="submit"
-          className="primary-button"
-          disabled={isLoading || !prompt.trim()}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 16px', fontSize: '13px' }}
-        >
-          {isLoading ? <Sparkles size={16} className="spin" /> : <Send size={16} />}
-          <span>Ask Agent</span>
-        </button>
-      </form>
-
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px', alignItems: 'center' }}>
-        <span style={{ fontSize: '12px', color: '#64748B' }}>Suggestions:</span>
-        {suggestions.map((s, idx) => (
-          <button
-            key={idx}
-            type="button"
-            className="secondary-button"
-            style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}
-            onClick={() => { setPrompt(s.text); handleSubmit(undefined, s.text); }}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      {lastProposal && (
-        <div style={{ marginTop: '12px', padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', borderLeft: '3px solid #0070E0', fontSize: '12px' }}>
-          <div style={{ fontWeight: 600, color: '#1E293B', marginBottom: '2px' }}>
-            Agent Action: <code>{lastProposal.toolCall.toolName}</code> (${lastProposal.toolCall.args.amountUsd})
+    <div className="agent-prompt-section">
+      <div className="agent-card">
+        <div className="agent-card-header">
+          <div className="agent-title-group">
+            <div className="agent-icon-badge">
+              <Bot size={18} />
+            </div>
+            <h2 className="agent-title">AI Payment Assistant</h2>
+            <span className="agent-provider-pill">{providerLabel}</span>
           </div>
-          <div style={{ color: '#475569' }}>{lastProposal.rationale}</div>
+          <span className="agent-hint">Ask your assistant to pay a bill, record an invoice, or issue a refund</span>
         </div>
-      )}
+
+        <form className="agent-input-row" onSubmit={e => handleSubmit(e)}>
+          <div className="agent-input-wrapper">
+            <Sparkles size={18} className="agent-input-icon" />
+            <input
+              type="text"
+              className="agent-input"
+              placeholder="e.g. Pay Sarah's Eco Cleaning invoice for $185, or refund $24 on ORD-772..."
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="agent-submit-btn"
+            disabled={isLoading || !prompt.trim()}
+          >
+            {isLoading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />}
+            <span>Ask Assistant</span>
+          </button>
+        </form>
+
+        <div className="agent-suggestions-row">
+          <span className="agent-suggestions-label">Try asking:</span>
+          {suggestions.map((s, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="agent-chip"
+              onClick={() => {
+                setPrompt(s.text);
+                handleSubmit(undefined, s.text);
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {lastProposal && (
+          <div className="agent-proposal-card">
+            <div className="agent-proposal-content">
+              <div className="agent-proposal-avatar">
+                <Sparkles size={18} />
+              </div>
+              <div className="agent-proposal-text">
+                <strong>Proposed: {lastProposal.toolCall.agentSummary}</strong>
+                <p>{lastProposal.rationale} • Reviewed below by AllowAgent firewall</p>
+              </div>
+            </div>
+            <div className="agent-proposal-amount">
+              <strong>${lastProposal.toolCall.args.amountUsd.toFixed(2)}</strong>
+              <span>{lastProposal.toolCall.args.currency || 'USD'}</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
