@@ -37,7 +37,7 @@ export function runPaymentChecks(
     if (!acc.readToolsInvoked.includes(t)) acc.readToolsInvoked.push(t);
   };
 
-  const { amountUsd, recipientEmail, invoiceId, orderId } = call.args;
+  const { amountUsd = 0, recipientEmail, invoiceId, orderId } = call.args;
   const trustedEmails = policy.trustedVendors.map(v => v.email.toLowerCase());
   const normalizedCallerEmail = recipientEmail?.trim().toLowerCase();
 

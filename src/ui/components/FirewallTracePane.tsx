@@ -52,7 +52,7 @@ export const FirewallTracePane: React.FC<FirewallTracePaneProps> = ({ evaluation
     {typeof e.crossExam.verifiedBaselineUsd === 'number' && <div className="comparison-row">
       <span>Usual amount <HelpTip label="usual amount">The historical invoice average in this demo. It may differ from the amount due.</HelpTip></span>
       <strong>{money(e.crossExam.verifiedBaselineUsd)}</strong>
-      {e.call.args.amountUsd > e.crossExam.verifiedBaselineUsd && <span className="difference">+{money(e.call.args.amountUsd - e.crossExam.verifiedBaselineUsd)} this time</span>}
+      {typeof e.call.args.amountUsd === 'number' && e.call.args.amountUsd > e.crossExam.verifiedBaselineUsd && <span className="difference">+{money(e.call.args.amountUsd - e.crossExam.verifiedBaselineUsd)} this time</span>}
     </div>}
     <div className="checks-list">
       {checks.map(check => <div className="check-row" key={check.label} aria-label={`${check.label}: ${check.passed ? 'Passed' : 'Needs attention'}`}>

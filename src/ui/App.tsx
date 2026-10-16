@@ -18,11 +18,24 @@ import { FirewallTracePane } from './components/FirewallTracePane';
 import { SimulatorPane } from './components/SimulatorPane';
 import { TopTelemetryBar } from './components/TopTelemetryBar';
 
+const SETTINGS_KEY = 'allowagent_connection_settings';
+
+function loadInitialSettings(): ConnectionSettings {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_KEY) : null;
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {
+    paypalClientId: '', paypalClientSecret: '', aiProvider: 'ollama',
+    aiApiKey: '', aiModel: 'mistral-large-4:cloud', ollamaEndpoint: 'http://localhost:11434/v1'
+  };
+}
+
 export const App: React.FC = () => {
-  const [settings, setSettings] = useState<ConnectionSettings>({
-    paypalClientId: '', paypalClientSecret: '', aiProvider: 'local', aiApiKey: ''
-  });
-  const [gateway, setGateway] = useState<PayPalGateway>(() => createPayPalGateway());
+  const [settings, setSettings] = useState<ConnectionSettings>(loadInitialSettings);
+  const [gateway, setGateway] = useState<PayPalGateway>(() => createPayPalGateway({
+    clientId: settings.paypalClientId, clientSecret: settings.paypalClientSecret
+  }));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [mode, setMode] = useState<ConstitutionMode>('PERSONAL');
   const [markdownByMode, setMarkdownByMode] = useState<Record<ConstitutionMode, string>>({
@@ -85,6 +98,7 @@ export const App: React.FC = () => {
 
   const handleSaveSettings = (nextSettings: ConnectionSettings) => {
     setSettings(nextSettings);
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(nextSettings)); } catch {}
     const nextGateway = createPayPalGateway({
       clientId: nextSettings.paypalClientId, clientSecret: nextSettings.paypalClientSecret
     });
