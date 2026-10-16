@@ -1,82 +1,71 @@
-export type DisputeLifeCycleStage = 
-  | 'INQUIRY' 
-  | 'CHARGEBACK' 
-  | 'PRE_ARBITRATION' 
-  | 'ARBITRATION';
-
-export type DisputeStatus = 
-  | 'OPEN' 
-  | 'WAITING_FOR_BUYER_RESPONSE' 
-  | 'WAITING_FOR_SELLER_RESPONSE' 
-  | 'UNDER_REVIEW' 
-  | 'RESOLVED';
-
-export type DisputeReason = 
-  | 'MERCHANDISE_OR_SERVICE_NOT_RECEIVED' 
-  | 'MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED' 
-  | 'UNAUTHORISED' 
-  | 'CREDIT_NOT_PROCESSED';
-
-export type EvidenceType = 
-  | 'PROOF_OF_FULFILLMENT' 
-  | 'PROOF_OF_REFUND' 
-  | 'PROOF_OF_ITEM_NOT_RECEIVED' 
-  | 'OTHER';
-
-export type EvidenceSource = 
-  | 'REQUESTED_FROM_BUYER' 
-  | 'REQUESTED_FROM_SELLER' 
-  | 'SUBMITTED_BY_BUYER' 
-  | 'SUBMITTED_BY_SELLER';
-
-export interface TrackingInfo {
-  carrier_name?: string;
-  tracking_number?: string;
+export interface PayPalInvoiceLineItem {
+  name: string;
+  amountUsd: number;
+  approvedBaseline?: boolean;
 }
 
-export interface DisputeEvidence {
-  evidence_type?: EvidenceType;
-  source?: EvidenceSource;
-  notes?: string;
-  evidence_info?: {
-    tracking_info?: TrackingInfo[];
-    refund_ids?: string[];
-  };
-  documents?: Array<{
-    name: string;
-    url?: string;
-  }>;
+export interface PayPalInvoiceRecord {
+  invoiceId: string;
+  vendorName: string;
+  vendorEmail: string;
+  totalAmountUsd: number;
+  historicalAverageUsd: number;
+  lineItems: PayPalInvoiceLineItem[];
+  note?: string;
 }
 
-export interface HateoasLink {
-  href: string;
-  rel: string;
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+export interface PayPalOrderRecord {
+  orderId: string;
+  recipientName: string;
+  recipientEmail: string;
+  totalAmountUsd: number;
+  refundableBalanceUsd: number;
+  status: 'CREATED' | 'COMPLETED' | 'REFUNDED';
 }
 
-export interface DisputeOutcome {
-  outcome_code?: string;
-  amount_refunded?: {
-    currency_code: string;
-    value: string;
-  };
+export interface PayPalTransactionRecord {
+  transactionId: string;
+  recipientName: string;
+  recipientEmail: string;
+  amountUsd: number;
+  timestampIso: string;
+  type: 'PAYMENT' | 'REFUND';
+  orderId?: string;
 }
 
-export interface DisputeCase {
-  dispute_id: string;
-  create_time: string;
-  update_time: string;
-  dispute_life_cycle_stage: DisputeLifeCycleStage;
-  status: DisputeStatus;
-  dispute_amount: {
-    currency_code: string;
-    value: string;
-  };
-  reason: DisputeReason;
-  buyer_response_due_date?: string;
-  seller_response_due_date?: string;
-  dispute_outcome?: DisputeOutcome;
-  evidences?: DisputeEvidence[];
-  links?: HateoasLink[];
+export interface PayPalTrackingRecord {
+  orderId: string;
+  carrier: string;
+  trackingNumber: string;
+  status: 'LABEL_CREATED' | 'IN_TRANSIT' | 'DELIVERED';
+  deliveredAtIso?: string;
 }
 
+export interface PayPalDisputeRecord {
+  disputeId: string;
+  orderId: string;
+  reason: 'MERCHANDISE_OR_SERVICE_NOT_RECEIVED' | 'MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED';
+  stage: 'INQUIRY' | 'CHARGEBACK';
+  status: 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED';
+  amountUsd: number;
+  buyerMessage: string;
+}
+
+export interface PayPalSubscriptionRecord {
+  subscriptionId: string;
+  planName: string;
+  vendorEmail: string;
+  currentMonthlyUsd: number;
+  proposedMonthlyUsd: number;
+}
+
+export interface PayPalSandboxState {
+  rolling24hSpendUsd: number;
+  orders: Record<string, PayPalOrderRecord>;
+  invoices: Record<string, PayPalInvoiceRecord>;
+  transactions: PayPalTransactionRecord[];
+  trackings: Record<string, PayPalTrackingRecord>;
+  disputes: Record<string, PayPalDisputeRecord>;
+  subscriptions: Record<string, PayPalSubscriptionRecord>;
+  refundedOrderIds: string[];
+}
