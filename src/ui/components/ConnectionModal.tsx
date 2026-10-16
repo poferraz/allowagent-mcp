@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, KeyRound, X } from 'lucide-react';
 import { LivePayPalClient } from '../../paypal/live-client';
+import { loadPersistedSettings, savePersistedSettings } from '../storage';
 
 export interface ConnectionSettings {
   paypalClientId: string;
@@ -19,7 +20,10 @@ export interface ConnectionModalProps {
 
 export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSave, onClose }) => {
   const ref = useRef<HTMLDialogElement>(null);
-  const [draft, setDraft] = useState<ConnectionSettings>({ ...settings });
+  const [draft, setDraft] = useState<ConnectionSettings>(() => ({
+    ...loadPersistedSettings(),
+    ...settings
+  }));
   const [testResult, setTestResult] = useState<{ ok?: boolean; message?: string } | null>(null);
   const [testing, setTesting] = useState(false);
 
@@ -46,8 +50,9 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
     }
   };
 
-  const handleApply = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleApply = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    savePersistedSettings(draft);
     onSave(draft);
     onClose();
   };
@@ -78,7 +83,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
           <input
             type="text"
             placeholder="e.g. A21AA..."
-            value={draft.paypalClientId}
+            value={draft.paypalClientId ?? ''}
             onChange={e => setDraft({ ...draft, paypalClientId: e.target.value })}
             style={{ width: '100%', minHeight: '40px', padding: '8px 12px', border: '1px solid #A4AFBB', borderRadius: '8px' }}
           />
@@ -89,7 +94,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
           <input
             type="password"
             placeholder="e.g. E..."
-            value={draft.paypalClientSecret}
+            value={draft.paypalClientSecret ?? ''}
             onChange={e => setDraft({ ...draft, paypalClientSecret: e.target.value })}
             style={{ width: '100%', minHeight: '40px', padding: '8px 12px', border: '1px solid #A4AFBB', borderRadius: '8px' }}
           />
@@ -167,7 +172,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
 
         <div className="modal-actions" style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: '12px' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn" style={{ gap: '8px' }}><CheckCircle2 size={16} /> Save & Apply</button>
+          <button type="button" className="btn" style={{ gap: '8px' }} onClick={() => handleApply()}><CheckCircle2 size={16} /> Save & Apply</button>
         </div>
       </form>
     </dialog>

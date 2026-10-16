@@ -17,31 +17,21 @@ import { ConstitutionPane } from './components/ConstitutionPane';
 import { FirewallTracePane } from './components/FirewallTracePane';
 import { SimulatorPane } from './components/SimulatorPane';
 import { TopTelemetryBar } from './components/TopTelemetryBar';
-
-const SETTINGS_KEY = 'allowagent_connection_settings';
-
-function loadInitialSettings(): ConnectionSettings {
-  try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(SETTINGS_KEY) : null;
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return {
-    paypalClientId: '', paypalClientSecret: '', aiProvider: 'ollama',
-    aiApiKey: '', aiModel: 'mistral-large-4:cloud', ollamaEndpoint: 'http://localhost:11434/v1'
-  };
-}
+import {
+  loadPersistedMarkdown,
+  loadPersistedSettings,
+  savePersistedMarkdown,
+  savePersistedSettings
+} from './storage';
 
 export const App: React.FC = () => {
-  const [settings, setSettings] = useState<ConnectionSettings>(loadInitialSettings);
+  const [settings, setSettings] = useState<ConnectionSettings>(loadPersistedSettings);
   const [gateway, setGateway] = useState<PayPalGateway>(() => createPayPalGateway({
     clientId: settings.paypalClientId, clientSecret: settings.paypalClientSecret
   }));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [mode, setMode] = useState<ConstitutionMode>('PERSONAL');
-  const [markdownByMode, setMarkdownByMode] = useState<Record<ConstitutionMode, string>>({
-    PERSONAL: DEFAULT_CONSTITUTIONS.PERSONAL,
-    BUSINESS: DEFAULT_CONSTITUTIONS.BUSINESS
-  });
+  const [markdownByMode, setMarkdownByMode] = useState<Record<ConstitutionMode, string>>(loadPersistedMarkdown);
   const [activeScenario, setActiveScenario] = useState<ScenarioDefinition>(SCENARIO_DECK[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ledgerTick, setLedgerTick] = useState(0);
@@ -72,22 +62,26 @@ export const App: React.FC = () => {
   };
 
   const handleMarkdownChange = (nextMd: string) => {
-    setMarkdownByMode(prev => ({ ...prev, [mode]: nextMd }));
+    setMarkdownByMode(prev => {
+      const updated = { ...prev, [mode]: nextMd };
+      savePersistedMarkdown(updated);
+      return updated;
+    });
     runEvaluation(activeScenario, nextMd, mode, false);
   };
 
   const handleUpdatePolicy = (nextPolicy: SpendPolicy) => handleMarkdownChange(serializeConstitution(nextPolicy));
 
-  const handleRestorePreset = () => {
-    const preset = DEFAULT_CONSTITUTIONS[mode];
-    setMarkdownByMode(prev => ({ ...prev, [mode]: preset }));
-    runEvaluation(activeScenario, preset, mode, false);
-  };
+  const handleRestorePreset = () => handleMarkdownChange(DEFAULT_CONSTITUTIONS[mode]);
 
   const handleApplyStrictVault = () => {
     setMode('PERSONAL');
     setActiveScenario(SCENARIO_DECK[0]);
-    setMarkdownByMode(prev => ({ ...prev, PERSONAL: STRICT_VAULT_CONSTITUTION_MD }));
+    setMarkdownByMode(prev => {
+      const updated = { ...prev, PERSONAL: STRICT_VAULT_CONSTITUTION_MD };
+      savePersistedMarkdown(updated);
+      return updated;
+    });
     runEvaluation(SCENARIO_DECK[0], STRICT_VAULT_CONSTITUTION_MD, 'PERSONAL', false);
   };
 
@@ -98,7 +92,7 @@ export const App: React.FC = () => {
 
   const handleSaveSettings = (nextSettings: ConnectionSettings) => {
     setSettings(nextSettings);
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(nextSettings)); } catch {}
+    savePersistedSettings(nextSettings);
     const nextGateway = createPayPalGateway({
       clientId: nextSettings.paypalClientId, clientSecret: nextSettings.paypalClientSecret
     });

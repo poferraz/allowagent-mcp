@@ -26,3 +26,6 @@
   4. **Pass 4 (AI Integration):** Implemented `AutonomousAgent` (`src/agent/agent-client.ts`) with `@paypal/agent-toolkit` schemas, live Gemini 2.5 / OpenAI GPT-4o tool-calling, and zero-key local reasoning fallback.
   5. **Pass 5 (Evidential Credibility):** Reconciled `PRODUCT.md` and `README.md` with implementation reality, added AI Tools Disclosure, and authored complete under-3-minute demonstration script in `docs/DEMO.md`.
 
+## ADR-007: Triple-Tier Resilient Persistence for Settings & Constitutions
+- **Decision:** Provide triple-tier fault-tolerant persistence (`localStorage` -> `sessionStorage` -> `document.cookie`) in `src/ui/storage.ts` for all user credentials (PayPal Client ID / Secret, AI provider configuration) and constitution policies (`PAYPAL.md` spend rules). Wrap every storage access in isolated try-catch blocks to guarantee persistence across browser page refreshes even under strict browser shields (Brave, Safari Private Browsing, or storage partitioning). Enforce explicit `onClick` and `onSubmit` execution on "Save & Apply".
+
