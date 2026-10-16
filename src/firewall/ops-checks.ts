@@ -14,7 +14,7 @@ export function runOpsChecks(
     if (!acc.readToolsInvoked.includes(t)) acc.readToolsInvoked.push(t);
   };
 
-  const { amountUsd, orderId, disputeId, subscriptionId } = call.args;
+  const { amountUsd = 0, orderId, disputeId, subscriptionId } = call.args;
 
   if (call.toolName === 'create_refund') {
     markRead('get_order');

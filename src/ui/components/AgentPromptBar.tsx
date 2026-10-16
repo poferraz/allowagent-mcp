@@ -12,6 +12,7 @@ export const AgentPromptBar: React.FC<AgentPromptBarProps> = ({ onProposeToolCal
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastProposal, setLastProposal] = useState<AgentProposal | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e?: React.FormEvent, customText?: string) => {
     if (e) e.preventDefault();
@@ -19,10 +20,13 @@ export const AgentPromptBar: React.FC<AgentPromptBarProps> = ({ onProposeToolCal
     if (!textToSubmit.trim() || isLoading) return;
 
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const proposal = await generateAgentProposal(textToSubmit, agentConfig);
       setLastProposal(proposal);
       onProposeToolCall(proposal.toolCall, proposal);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
@@ -110,9 +114,14 @@ export const AgentPromptBar: React.FC<AgentPromptBarProps> = ({ onProposeToolCal
               </div>
             </div>
             <div className="agent-proposal-amount">
-              <strong>${lastProposal.toolCall.args.amountUsd.toFixed(2)}</strong>
+              <strong>{typeof lastProposal.toolCall.args.amountUsd === 'number' ? `$${lastProposal.toolCall.args.amountUsd.toFixed(2)}` : 'Action'}</strong>
               <span>{lastProposal.toolCall.args.currency || 'USD'}</span>
             </div>
+          </div>
+        )}
+        {errorMsg && (
+          <div style={{ padding: '8px 12px', background: 'rgba(217,45,32,0.08)', border: '1px solid #D92D20', borderRadius: '8px', color: '#D92D20', fontSize: '0.8125rem', marginTop: '10px' }}>
+            ⚠️ {errorMsg}
           </div>
         )}
       </div>

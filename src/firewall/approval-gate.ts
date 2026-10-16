@@ -30,7 +30,7 @@ export function computePayloadHash(
     subscriptionId: call.args.subscriptionId ?? '',
     recipientName: call.args.recipientName ?? '',
     recipientEmail: (call.args.recipientEmail ?? '').trim().toLowerCase(),
-    amountCents: toCents(call.args.amountUsd),
+    amountCents: toCents(call.args.amountUsd ?? 0),
     baselineCents:
       typeof verifiedBaselineUsd === 'number' ? toCents(verifiedBaselineUsd) : null,
     currency: call.args.currency ?? 'USD',
@@ -45,25 +45,26 @@ export function buildEvidenceDiffCard(
   crossExam: CrossExamResult,
   payloadHash: string
 ): EvidenceDiffCard {
+  const proposedAmountUsd = call.args.amountUsd ?? 0;
   const canAmendToBaseline =
     (call.toolName === 'record_payment_for_invoice' || call.toolName === 'pay_order') &&
     typeof crossExam.verifiedBaselineUsd === 'number' &&
     crossExam.verifiedBaselineUsd > 0 &&
-    crossExam.verifiedBaselineUsd < call.args.amountUsd;
+    crossExam.verifiedBaselineUsd < proposedAmountUsd;
 
   const warningTitles = crossExam.findings.map(f => f.title).join(' | ');
 
   return {
     callId: call.id,
     toolName: call.toolName,
-    proposedAmountUsd: call.args.amountUsd,
+    proposedAmountUsd,
     verifiedBaselineUsd: crossExam.verifiedBaselineUsd,
     canAmendToBaseline,
     addedLineItems: crossExam.addedLineItems,
     ledgerCitations: crossExam.ledgerCitations,
     summary:
       warningTitles ||
-      `Constitutional review required before executing ${call.toolName} ($${call.args.amountUsd.toFixed(2)}).`,
+      `Constitutional review required before executing ${call.toolName} ($${proposedAmountUsd.toFixed(2)}).`,
     payloadHash
   };
 }
@@ -101,7 +102,7 @@ export function executeAutonomousCall(
     throw new Error(`Cannot auto-execute verdict: ${evaluation.verdict}`);
   }
   if (evaluation.executionStatus !== 'NOT_EXECUTED') {
-    throw new Error(`Evaluation already processed: ${evaluation.executionStatus}`);
+    throw new Error(`Replay Defense: Evaluation already processed: ${evaluation.executionStatus}`);
   }
   const recomputed = computePayloadHash(
     evaluation.call,
@@ -116,7 +117,7 @@ export function executeAutonomousCall(
   }
   consumedApprovalKeys.add(consumptionKey);
 
-  dispatchValidatedWrite(evaluation.call, evaluation.call.args.amountUsd, gateway);
+  dispatchValidatedWrite(evaluation.call, evaluation.call.args.amountUsd ?? 0, gateway);
   return {
     ...evaluation,
     executionStatus: 'EXECUTED_FULL',
@@ -161,7 +162,7 @@ export function resolveApprovalDecision(
     };
   }
 
-  let finalAmountUsd = evaluation.call.args.amountUsd;
+  let finalAmountUsd = evaluation.call.args.amountUsd ?? 0;
   if (decision === 'AMEND_TO_BASELINE') {
     const invoiceId = evaluation.call.args.invoiceId;
     const ledgerInvoice = invoiceId ? gateway.getInvoice(invoiceId) : undefined;
