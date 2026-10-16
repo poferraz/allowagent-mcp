@@ -1,5 +1,8 @@
 import type { McpToolCall } from '../types/mcp';
 import { PAYPAL_AGENT_TOOLS } from './toolkit-schemas';
+import { runLocalReasoner } from './local-reasoner';
+
+export { runLocalReasoner };
 
 export interface AgentConfig {
   provider?: 'local' | 'openai' | 'gemini' | 'groq' | 'ollama';
@@ -13,103 +16,29 @@ export interface AgentProposal {
   rationale: string;
   modelUsed: string;
   confidence: number;
+  thinking?: string;
 }
 
-function extractAmount(text: string): number {
-  const m = text.match(/\$\s*(\d+(\.\d{1,2})?)/) || text.match(/(\d+(\.\d{1,2})?)\s*(dollars|usd)/i);
-  return m ? parseFloat(m[1]) : 0;
-}
-
-export function runLocalReasoner(prompt: string): AgentProposal {
-  const amount = extractAmount(prompt);
-  const lower = prompt.toLowerCase();
-  const idMatch = prompt.match(/\b(INV2-[A-Z0-9-]+|ORD-[A-Z0-9-]+|DSP-[A-Z0-9-]+|SUB-[A-Z0-9-]+)\b/i);
-  const resourceId = idMatch ? idMatch[1].toUpperCase() : '';
-
-  if (lower.includes('refund')) {
-    const orderId = resourceId || 'ORD-772';
-    return {
-      toolCall: {
-        id: `agent-${Date.now()}`,
-        toolName: 'create_refund',
-        agentSummary: `Process refund of $${(amount || 24).toFixed(2)} for ${orderId}`,
-        args: { orderId, amountUsd: amount || 24, reason: prompt }
-      },
-      rationale: `Identified refund request for order ${orderId} ($${(amount || 24).toFixed(2)}).`,
-      modelUsed: 'local-financial-reasoner-v1',
-      confidence: 0.96
-    };
+function cleanHumanSummary(toolName: string, args: Record<string, unknown>, prompt: string): string {
+  const amt = typeof args.amountUsd === 'number' ? `$${args.amountUsd.toFixed(2)}` : '';
+  if (toolName === 'record_payment_for_invoice') {
+    const name = (args.recipientName as string) || "Sarah's Eco Cleaning";
+    return `Pay ${name} invoice ${amt}`.trim();
   }
-
-  if (lower.includes('dispute')) {
-    const disputeId = resourceId || 'DSP-3301';
-    return {
-      toolCall: {
-        id: `agent-${Date.now()}`,
-        toolName: 'accept_dispute_claim',
-        agentSummary: `Accept dispute claim ${disputeId} for $${(amount || 320).toFixed(2)}`,
-        args: { disputeId, amountUsd: amount || 320, reason: prompt }
-      },
-      rationale: `Identified dispute surrender request for ${disputeId}.`,
-      modelUsed: 'local-financial-reasoner-v1',
-      confidence: 0.94
-    };
+  if (toolName === 'pay_order') {
+    const name = (args.recipientName as string) || 'Metro Fiber';
+    return `Pay ${name} ${amt}`.trim();
   }
-
-  if (lower.includes('clean') || lower.includes('sarah') || (resourceId && resourceId.startsWith('INV2-SARAH'))) {
-    const invoiceId = resourceId || 'INV2-SARAH-104';
-    return {
-      toolCall: {
-        id: `agent-${Date.now()}`,
-        toolName: 'record_payment_for_invoice',
-        agentSummary: `Record payment for Sarah's Eco Cleaning ($${(amount || 185).toFixed(2)})`,
-        args: {
-          invoiceId,
-          recipientName: "Sarah's Eco Cleaning",
-          recipientEmail: 'billing@saraheco.ca',
-          amountUsd: amount || 185,
-          currency: 'USD'
-        }
-      },
-      rationale: `Matched cleaning service invoice ${invoiceId} for $${(amount || 185).toFixed(2)}.`,
-      modelUsed: 'local-financial-reasoner-v1',
-      confidence: 0.98
-    };
+  if (toolName === 'create_refund') {
+    return `Refund order ${args.orderId || 'ORD-772'} ${amt}`.trim();
   }
-
-  if (lower.includes('internet') || lower.includes('metro') || (resourceId && resourceId.startsWith('ORD-101'))) {
-    return {
-      toolCall: {
-        id: `agent-${Date.now()}`,
-        toolName: 'pay_order',
-        agentSummary: `Pay Metro Fiber utility bill ($${(amount || 28).toFixed(2)})`,
-        args: {
-          orderId: resourceId || 'ORD-101',
-          invoiceId: 'INV2-METRO-01',
-          recipientName: 'Metro Fiber',
-          recipientEmail: 'autopay@metrofiber.com',
-          amountUsd: amount || 28,
-          currency: 'USD'
-        }
-      },
-      rationale: `Matched routine utility internet bill for Metro Fiber ($${(amount || 28).toFixed(2)}).`,
-      modelUsed: 'local-financial-reasoner-v1',
-      confidence: 0.99
-    };
+  if (toolName === 'accept_dispute_claim') {
+    return `Accept dispute ${args.disputeId || 'DSP-3301'} ${amt}`.trim();
   }
-
-  const invoiceId = resourceId.startsWith('INV') ? resourceId : 'INV2-METRO-01';
-  return {
-    toolCall: {
-      id: `agent-${Date.now()}`,
-      toolName: 'record_payment_for_invoice',
-      agentSummary: `Record payment of $${(amount || 50).toFixed(2)}`,
-      args: { invoiceId, recipientName: 'Merchant', recipientEmail: 'payee@paypal.com', amountUsd: amount || 50 }
-    },
-    rationale: `Extracted financial intent for $${(amount || 50).toFixed(2)}.`,
-    modelUsed: 'local-financial-reasoner-v1',
-    confidence: 0.85
-  };
+  if (toolName === 'cancel_subscription') {
+    return `Cancel subscription ${args.subscriptionId || 'SUB-GYM-01'}`.trim();
+  }
+  return prompt;
 }
 
 async function callOpenAiCompatible(prompt: string, endpoint: string, model: string, apiKey?: string): Promise<AgentProposal | null> {
@@ -121,7 +50,7 @@ async function callOpenAiCompatible(prompt: string, endpoint: string, model: str
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: 'You are a PayPal financial assistant. Use tool calling to propose transactions.' },
+        { role: 'system', content: 'You are a PayPal financial assistant. Use tool calling to propose transactions concisely.' },
         { role: 'user', content: prompt }
       ],
       tools: PAYPAL_AGENT_TOOLS.map(t => ({ type: 'function', function: t })),
@@ -141,12 +70,18 @@ async function callOpenAiCompatible(prompt: string, endpoint: string, model: str
   const args = JSON.parse(tc.function.arguments || '{}');
   if (typeof args.amountUsd === 'string') args.amountUsd = parseFloat(args.amountUsd);
   else if (args.amountUsd === undefined && args.amount !== undefined) args.amountUsd = Number(args.amount);
-  const rationale = choice?.reasoning || choice?.content || `${model} generated tool call ${tc.function.name}.`;
+
+  const toolName = tc.function.name as McpToolCall['toolName'];
+  const summary = cleanHumanSummary(toolName, args, prompt);
+  const reasoning = choice?.reasoning;
+  const rationale = choice?.reasoning || choice?.content || `Parsed payment intent for ${summary}.`;
+
   return {
-    toolCall: { id: `call-${Date.now()}`, toolName: tc.function.name as McpToolCall['toolName'], agentSummary: prompt, args },
+    toolCall: { id: `call-${Date.now()}`, toolName, agentSummary: summary, args },
     rationale,
     modelUsed: model,
-    confidence: 0.95
+    confidence: 0.95,
+    thinking: reasoning
   };
 }
 
@@ -180,9 +115,11 @@ export async function generateAgentProposal(prompt: string, config?: AgentConfig
       const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ functionCall?: { name: string; args: Record<string, unknown> } }> } }> };
       const fc = data.candidates?.[0]?.content?.parts?.find(p => p.functionCall)?.functionCall;
       if (fc) {
+        const toolName = fc.name as McpToolCall['toolName'];
+        const summary = cleanHumanSummary(toolName, fc.args as Record<string, unknown>, prompt);
         return {
-          toolCall: { id: `call-${Date.now()}`, toolName: fc.name as McpToolCall['toolName'], agentSummary: prompt, args: fc.args as unknown as McpToolCall['args'] },
-          rationale: `Gemini 2.5 Flash identified tool call ${fc.name}.`,
+          toolCall: { id: `call-${Date.now()}`, toolName, agentSummary: summary, args: fc.args as unknown as McpToolCall['args'] },
+          rationale: `Parsed payment intent for ${summary}.`,
           modelUsed: 'gemini-2.5-flash',
           confidence: 0.95
         };

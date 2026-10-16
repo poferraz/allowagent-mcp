@@ -173,5 +173,27 @@ describe('Autonomous AI Agent — Financial Tool Calling & Intent Reasoning', ()
       })
     );
   });
+
+  it('correctly handles minimal, terse, and colloquial user prompts', async () => {
+    // 1. "pay cleaning invoice" (no dollar sign or explicit invoice number)
+    const p1 = await generateAgentProposal('pay cleaning invoice');
+    expect(p1.toolCall.toolName).toBe('record_payment_for_invoice');
+    expect(p1.toolCall.args.amountUsd).toBe(185);
+    expect(p1.toolCall.agentSummary).toContain("Sarah's Eco Cleaning");
+
+    // 2. "pay the 185 invoice"
+    const p2 = await generateAgentProposal('pay the 185 invoice');
+    expect(p2.toolCall.toolName).toBe('record_payment_for_invoice');
+    expect(p2.toolCall.args.amountUsd).toBe(185);
+
+    // 3. "refund 24"
+    const p3 = await generateAgentProposal('refund 24');
+    expect(p3.toolCall.toolName).toBe('create_refund');
+    expect(p3.toolCall.args.amountUsd).toBe(24);
+
+    // 4. "cancel gym subscription"
+    const p4 = await generateAgentProposal('cancel gym subscription');
+    expect(p4.toolCall.toolName).toBe('cancel_subscription');
+  });
 });
 
