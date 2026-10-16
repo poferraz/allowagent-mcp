@@ -7,4 +7,5 @@
 - **Completed Tasks:**
   - Task 1: Clean-Slate Archive, Persistent Memory System & Domain Contracts (2 tests passing)
   - Task 2: `PAYPAL.md` Spend Constitution Compiler, Strict Grammars & Presets (7 tests passing total)
-- **Next Task:** Task 3 (Stateful PayPal Sandbox Ledger & Hybrid Gateway)
+  - Task 3: Stateful PayPal Sandbox Ledger & Hybrid Gateway (9 tests passing total)
+- **Next Task:** Task 4 (3-Vector Taint & Indirect Prompt Injection Scanner)
