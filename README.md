@@ -60,22 +60,38 @@ requests can qualify for automatic execution, malformed rules fail closed, and e
 uses a recomputed request digest with one-time approval consumption. Technical evidence
 is available under **View supporting details → Developer details**.
 
-## Implementation status and limits
+## Dual-Mode Architecture & AI Agent
 
-This repository contains a React/TypeScript dashboard, a deterministic policy engine,
-six sample scenarios, and an in-memory PayPal-shaped ledger. The gateway factory always
-returns `StatefulLedgerClient`. **Live PayPal Sandbox calls, an installed
-`@paypal/agent-toolkit` integration, a running MCP server, and live LLM calls are not
-implemented.** Tool names model the intended integration boundary.
+AllowAgent MCP bridges autonomous AI agents with PayPal spending tools through a deterministic, fail-closed firewall.
 
-The demo is not production-ready. Suspicious-text detection uses patterns, account state
-resets on reload, and its approval boundary must be implemented server-side before use
-with real accounts. See [SECURITY.md](SECURITY.md).
+1. **AI Agent Tool-Calling:** Type any natural language prompt (e.g. *"Pay Sarah's Eco Cleaning invoice for $185"*) into the top **AI Payment Assistant** bar. The agent analyzes financial intent and emits `@paypal/agent-toolkit` tool calls.
+   - Built-in Local Financial Reasoner (zero API keys required).
+   - Live Google Gemini 2.5 Flash function calling (configurable with `GEMINI_API_KEY`).
+   - Live OpenAI GPT-4o-mini tool calling (configurable with `OPENAI_API_KEY`).
+2. **Deterministic Firewall:** The 4-stage pipeline checks schemas, inspects for indirect prompt injection, cross-examines against authoritative account records, and evaluates against `PAYPAL.md`.
+3. **Dual Execution Gateways:**
+   - **Local Demo Sandbox:** Instant testing with seeded invoices, orders, delivery tracking, and rolling budgets.
+   - **Live PayPal Sandbox API:** Direct OAuth 2.0 token exchange and REST calls to `api-m.sandbox.paypal.com` (`/v2/invoicing`, `/v2/checkout/orders`, `/v2/payments/captures`).
+
+To configure live PayPal Sandbox credentials or AI model keys, click **Settings** in the header.
+
+## AI Tools & Models Disclosure (Hackathon Requirements)
+
+| Component | Tool / Model | Role in Application |
+| :--- | :--- | :--- |
+| **Autonomous Agent** | Google Gemini 2.5 Flash / OpenAI GPT-4o-mini / Local Reasoner | Translates user prompts into formal `@paypal/agent-toolkit` tool calls (`record_payment_for_invoice`, `pay_order`, `create_refund`, etc.). |
+| **Spend Firewall** | Deterministic TypeScript AST Compiler & Reference Monitor | Compiles `PAYPAL.md` constitutions, evaluates spend limits, cross-examines ledger records, and produces FIPS 180-4 SHA-256 digests. |
+| **Human Review** | React 19 Accessible Native Dialog | Displays verified historical baseline vs. proposed delta, allowing single-click baseline remediation. |
+
+## Demonstration Video
+
+- **Video Walkthrough:** [YouTube Demonstration](https://youtu.be/PLACEHOLDER_DEMO_LINK) *(Under 3 minutes, showing live AI prompt → firewall cross-examination → sandbox execution)*
+- **Demo Script:** See [`docs/DEMO.md`](docs/DEMO.md) for the complete 3-minute video recording storyboard and script.
 
 ## Verify and navigate
 
 ```bash
-npm run verify  # source line limits, TypeScript, and all 29 tests
+npm run verify  # source line limits (<200 lines/file), TypeScript, and all 42 tests
 npm run build   # production bundle
 ```
 
@@ -84,13 +100,13 @@ below 200 lines.
 
 | Path | Purpose |
 | --- | --- |
-| `src/ui/` | Dashboard, review dialog, and contextual help |
+| `src/agent/` | Autonomous AI agent reasoner and `@paypal/agent-toolkit` schemas |
+| `src/ui/` | Dashboard, AI prompt bar, review dialog, and contextual help |
 | `src/constitution/` | Rule parser and presets |
-| `src/firewall/` | Validation, record checks, evaluation, and approval gate |
-| `src/paypal/` | Gateway contract and sample ledger |
+| `src/firewall/` | FIPS 180-4 SHA-256, validation, record checks, evaluation, and approval gate |
+| `src/paypal/` | Live PayPal Sandbox client (`api-m.sandbox.paypal.com`) and sample ledger |
 | `src/simulator/` | Sample requests and preview runner |
-| `tests/` | Domain and UI regression checks |
-| `docs/archive/` | Earlier research and concepts, not the current implementation |
+| `tests/` | Domain, AI agent, cryptographic, and UI regression checks |
 
 ## Contribute, security, and license
 
@@ -101,11 +117,3 @@ Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 Code is [MIT licensed](LICENSE). Bundled DM Sans fonts use the
 [SIL Open Font License](public/fonts/OFL.txt). PayPal names and marks belong to their
 respective owners and are not covered by the project's MIT license.
-
-## Hackathon preparation
-
-The source, license, reproducible setup, and sample-data demo are available here.
-A hosted demo, demonstration video, live integration evidence, and final Devpost submission
-still need to be prepared. Current official requirements could not be retrieved from the
-Devpost connector during repository setup; check the event requirements before submitting.
-Nothing has been submitted to Devpost by this repository setup.

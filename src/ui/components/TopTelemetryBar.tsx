@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, ShieldCheck } from 'lucide-react';
+import { RefreshCw, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import type { ConstitutionMode } from '../../types/constitution';
 import { HelpTip } from './HelpTip';
 import { money } from '../presentation';
@@ -12,10 +12,11 @@ export interface TopTelemetryBarProps {
   gatewayMode: 'SANDBOX_LEDGER' | 'LIVE_PAYPAL_SANDBOX';
   isFailClosed: boolean;
   onResetLedger: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const TopTelemetryBar: React.FC<TopTelemetryBarProps> = props => {
-  const { mode, onSelectMode, rolling24hSpendUsd, dailyCapUsd, gatewayMode, isFailClosed, onResetLedger } = props;
+  const { mode, onSelectMode, rolling24hSpendUsd, dailyCapUsd, gatewayMode, isFailClosed, onResetLedger, onOpenSettings } = props;
   return <>
     <header className="telemetry-bar">
       <div className="header-inner">
@@ -35,10 +36,23 @@ export const TopTelemetryBar: React.FC<TopTelemetryBarProps> = props => {
             {value === 'PERSONAL' ? 'Personal' : 'Business'}
           </button>)}
         </nav>
-        <div className="demo-indicator"><ShieldCheck size={17} /> {gatewayMode === 'SANDBOX_LEDGER' ? 'Demo account' : 'PayPal sandbox'}
-          <HelpTip label="demo account">{gatewayMode === 'SANDBOX_LEDGER'
-            ? 'Try sample payments using local demo records. No real money moves.'
-            : 'This environment uses PayPal test accounts, not real money.'}</HelpTip>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="demo-indicator"><ShieldCheck size={17} /> {gatewayMode === 'SANDBOX_LEDGER' ? 'Demo account' : 'PayPal sandbox'}
+            <HelpTip label="demo account">{gatewayMode === 'SANDBOX_LEDGER'
+              ? 'Try sample payments using local demo records. No real money moves.'
+              : 'This environment uses PayPal test accounts, not real money.'}</HelpTip>
+          </div>
+          {onOpenSettings && (
+            <button
+              type="button"
+              className="text-button"
+              style={{ color: '#FFFFFF', opacity: 0.9, display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'rgba(255,255,255,0.12)', padding: '4px 8px', borderRadius: '4px' }}
+              onClick={onOpenSettings}
+              title="Configure PayPal Sandbox credentials and AI model API keys"
+            >
+              <SlidersHorizontal size={13} /> Settings
+            </button>
+          )}
         </div>
       </div>
     </header>

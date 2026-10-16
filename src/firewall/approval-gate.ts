@@ -7,9 +7,15 @@ import type {
 import type { McpToolCall } from '../types/mcp';
 import { toCents } from '../types/money';
 
+import { sha256Hex } from './sha256';
+
 export type ApprovalAction = 'APPROVE_FULL' | 'AMEND_TO_BASELINE' | 'REJECT';
 
 const consumedApprovalKeys = new Set<string>();
+
+export function resetConsumedKeysForTesting(): void {
+  consumedApprovalKeys.clear();
+}
 
 export function computePayloadHash(
   call: McpToolCall,
@@ -31,13 +37,7 @@ export function computePayloadHash(
     reason: call.args.reason ?? ''
   });
 
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < canonical.length; i++) {
-    hash ^= canonical.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  const hex = (hash >>> 0).toString(16).padStart(8, '0');
-  return `sha256-${hex}`;
+  return `sha256-${sha256Hex(canonical)}`;
 }
 
 export function buildEvidenceDiffCard(
@@ -110,6 +110,12 @@ export function executeAutonomousCall(
   if (recomputed !== evaluation.payloadHash) {
     throw new Error('Payload hash mismatch: call parameters were tampered after evaluation');
   }
+  const consumptionKey = `${evaluation.call.id}:${evaluation.payloadHash}`;
+  if (consumedApprovalKeys.has(consumptionKey)) {
+    throw new Error(`Execution already consumed for ${consumptionKey}`);
+  }
+  consumedApprovalKeys.add(consumptionKey);
+
   dispatchValidatedWrite(evaluation.call, evaluation.call.args.amountUsd, gateway);
   return {
     ...evaluation,
