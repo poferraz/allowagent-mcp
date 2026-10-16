@@ -113,7 +113,7 @@ export const App: React.FC = () => {
     setActiveScenario(customScenario);
     const nextEval = evaluateToolCall(call, policy, gateway);
     setEvaluation(nextEval);
-    setIsModalOpen(nextEval.verdict === 'PAUSE_FOR_APPROVAL');
+    setIsModalOpen(false);
     setLedgerTick(t => t + 1);
   };
 
@@ -150,6 +150,7 @@ export const App: React.FC = () => {
         </span>
       </div>
       <AgentPromptBar
+        mode={mode}
         onProposeToolCall={handleProposeToolCall}
         agentConfig={{
           provider: settings.aiProvider,

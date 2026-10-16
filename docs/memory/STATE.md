@@ -19,9 +19,13 @@
   - Task 12: Customer payment dashboard refinement and plain-language reviews (29/29 tests passing, strict `<200` lines/file verified)
   - Task 13: 5-Pass Self-Proof Live PayPal Sandbox & Autonomous AI Agent Integration (44/44 tests passing, strict `<200` lines/file verified)
   - Task 14: 5-Pass Rigorous Self-Proof Testing, Red-Teaming & UX Friction Fixes (59/59 tests passing, strict `<200` lines/file verified)
-  - Task 15: Resilient Settings & Constitution Multi-Tier Persistence (64/64 tests passing, strict `<200` lines/file verified):
-    - Added `src/ui/storage.ts` with triple-tier persistence (`localStorage` -> `sessionStorage` -> `document.cookie`) with `globalThis` support.
-    - Updated `ConnectionModal.tsx` and `App.tsx` to reliably persist both PayPal credentials / AI configs and `markdownByMode` constitution policies across browser refreshes.
-    - Fixed button submission quirks with explicit `onClick={() => handleApply()}` and immediate dual-storage synchronization.
-- **Current Status:** 64/64 tests passing in ~3s, strict `<200` lines/file verified across all `src/` files, TypeScript compiling cleanly (`tsc --noEmit`), dev server live on port 5173.
-- **Next Task:** Record demo video following `docs/DEMO.md`, and submit to Devpost.
+  - Task 15: Resilient Settings & Constitution Multi-Tier Persistence (64/64 tests passing, strict `<200` lines/file verified)
+  - Task 16: Playwright Real-Browser Verification, AI Thinking Feedback & Plain-Language UX (65/65 tests passing, strict `<200` lines/file verified, Playwright E2E passing):
+    - Modularized `src/agent/local-reasoner.ts` to flexibly handle colloquial & minimal wording prompts ('pay cleaning invoice', 'pay 185 invoice', 'refund 24', 'cancel gym subscription').
+    - Added dynamic background thinking/progress feedback banner with live timer in `AgentPromptBar.tsx` ('Understanding request...', 'Verifying with PayPal Sandbox...', 'Synthesizing proposal...').
+    - De-jargonized AI proposal summaries to clean human-friendly text with collapsed technical thinking drawer.
+    - Added mode-aware suggestion chips updating between Personal and Business workflows.
+    - Eliminated modal screen-hijacking upon AI proposal creation by preserving pure review preview.
+    - Authored and verified real Chromium browser end-to-end automation test (`tests/e2e/real_browser_test.py`) validating persistence, mode switching, minimal prompts, and C-suite level adversarial prompt injection interception.
+- **Current Status:** 65/65 Vitest unit/integration tests passing in ~2.9s + Playwright real-browser E2E suite passing, strict `<200` lines/file verified across all `src/` files, TypeScript compiling cleanly (`tsc --noEmit`), dev server live on port 5173.
+- **Next Task:** Merge `test/sandbox-friction-and-security` to `main`, record demo video following `docs/DEMO.md`, and submit to Devpost.
