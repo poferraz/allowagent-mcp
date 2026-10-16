@@ -29,3 +29,11 @@
 ## ADR-007: Triple-Tier Resilient Persistence for Settings & Constitutions
 - **Decision:** Provide triple-tier fault-tolerant persistence (`localStorage` -> `sessionStorage` -> `document.cookie`) in `src/ui/storage.ts` for all user credentials (PayPal Client ID / Secret, AI provider configuration) and constitution policies (`PAYPAL.md` spend rules). Wrap every storage access in isolated try-catch blocks to guarantee persistence across browser page refreshes even under strict browser shields (Brave, Safari Private Browsing, or storage partitioning). Enforce explicit `onClick` and `onSubmit` execution on "Save & Apply".
 
+## ADR-008: Consumer-First AI Transparency, Thinking Feedback & Real-Browser Verification
+- **Decision:** Optimize AI agent interaction for non-technical consumers while satisfying C-suite executive security scrutiny:
+  1. **Thinking & Background Transparency:** Add animated multi-stage thinking feedback (`AgentPromptBar.tsx`) with elapsed timer during model inference and sandbox verification.
+  2. **De-Jargonized Plain Language:** Present clean human summaries in the primary viewport (`Pay Sarah's Eco Cleaning ($185.00)`) and collapse raw model reasoning tokens into an expandable audit trace.
+  3. **Zero Screen-Hijacking:** AI proposals remain pure previews in the Payment Review pane without unprompted modal interruption.
+  4. **Colloquial & Minimal Wording Robustness:** Support natural terse commands (`pay cleaning invoice`, `pay 185 invoice`, `refund 24`) in `src/agent/local-reasoner.ts`.
+  5. **Real-Browser Automation:** Maintain automated Playwright Chromium end-to-end suite (`tests/e2e/real_browser_test.py`) proving real-world persistence, mode-switching, and adversarial injection containment.
+
