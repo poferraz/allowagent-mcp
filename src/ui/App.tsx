@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
 import { compileConstitution, serializeConstitution } from '../constitution/parser';
 import { DEFAULT_CONSTITUTIONS, STRICT_VAULT_CONSTITUTION_MD } from '../constitution/presets';
-import {
-  executeAutonomousCall,
-  resolveApprovalDecision,
-  type ApprovalAction
-} from '../firewall/approval-gate';
+import { executeAutonomousCall, resolveApprovalDecision, type ApprovalAction } from '../firewall/approval-gate';
 import { evaluateToolCall } from '../firewall/policy-evaluator';
-import { StatefulLedgerClient } from '../paypal/ledger-client';
+import { createPayPalGateway } from '../paypal/live-client';
+import type { PayPalGateway } from '../paypal/gateway';
 import { getScenariosByMode, SCENARIO_DECK, type ScenarioDefinition } from '../simulator/scenarios';
 import type { ConstitutionMode, SpendPolicy } from '../types/constitution';
 import type { FirewallEvaluation } from '../types/firewall';
+import type { McpToolCall } from '../types/mcp';
+import type { AgentProposal } from '../agent/agent-client';
+import { AgentPromptBar } from './components/AgentPromptBar';
 import { ApprovalDiffModal } from './components/ApprovalDiffModal';
+import { ConnectionModal, type ConnectionSettings } from './components/ConnectionModal';
 import { ConstitutionPane } from './components/ConstitutionPane';
 import { FirewallTracePane } from './components/FirewallTracePane';
 import { SimulatorPane } from './components/SimulatorPane';
 import { TopTelemetryBar } from './components/TopTelemetryBar';
 
 export const App: React.FC = () => {
-  const [ledger] = useState(() => new StatefulLedgerClient());
+  const [settings, setSettings] = useState<ConnectionSettings>({
+    paypalClientId: '', paypalClientSecret: '', aiProvider: 'local', aiApiKey: ''
+  });
+  const [gateway, setGateway] = useState<PayPalGateway>(() => createPayPalGateway());
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [mode, setMode] = useState<ConstitutionMode>('PERSONAL');
   const [markdownByMode, setMarkdownByMode] = useState<Record<ConstitutionMode, string>>({
     PERSONAL: DEFAULT_CONSTITUTIONS.PERSONAL,
@@ -30,29 +35,22 @@ export const App: React.FC = () => {
 
   const currentMarkdown = markdownByMode[mode];
   const policy = compileConstitution(currentMarkdown, mode);
-
   const [evaluation, setEvaluation] = useState<FirewallEvaluation>(() =>
-    evaluateToolCall(SCENARIO_DECK[0].call, policy, ledger)
+    evaluateToolCall(SCENARIO_DECK[0].call, policy, gateway)
   );
 
-  const runEvaluation = (
-    scen: ScenarioDefinition,
-    md: string,
-    nextMode: ConstitutionMode,
-    openModalOnPause = false
-  ) => {
-    const compiled = compileConstitution(md, nextMode);
-    const nextEval = evaluateToolCall(scen.call, compiled, ledger);
+  const runEvaluation = (scen: ScenarioDefinition, md: string, nextMode: ConstitutionMode, openModal = false) => {
+    const nextEval = evaluateToolCall(scen.call, compileConstitution(md, nextMode), gateway);
     setEvaluation(nextEval);
-    setIsModalOpen(openModalOnPause && nextEval.verdict === 'PAUSE_FOR_APPROVAL');
+    setIsModalOpen(openModal && nextEval.verdict === 'PAUSE_FOR_APPROVAL');
     setLedgerTick(t => t + 1);
   };
 
   const handleSelectMode = (nextMode: ConstitutionMode) => {
     setMode(nextMode);
-    const firstScenario = getScenariosByMode(nextMode)[0];
-    setActiveScenario(firstScenario);
-    runEvaluation(firstScenario, markdownByMode[nextMode], nextMode, false);
+    const first = getScenariosByMode(nextMode)[0];
+    setActiveScenario(first);
+    runEvaluation(first, markdownByMode[nextMode], nextMode, false);
   };
 
   const handleSelectScenario = (scen: ScenarioDefinition) => {
@@ -65,9 +63,7 @@ export const App: React.FC = () => {
     runEvaluation(activeScenario, nextMd, mode, false);
   };
 
-  const handleUpdatePolicy = (nextPolicy: SpendPolicy) => {
-    handleMarkdownChange(serializeConstitution(nextPolicy));
-  };
+  const handleUpdatePolicy = (nextPolicy: SpendPolicy) => handleMarkdownChange(serializeConstitution(nextPolicy));
 
   const handleRestorePreset = () => {
     const preset = DEFAULT_CONSTITUTIONS[mode];
@@ -76,27 +72,50 @@ export const App: React.FC = () => {
   };
 
   const handleApplyStrictVault = () => {
-    const firstPersonal = SCENARIO_DECK[0];
     setMode('PERSONAL');
-    setActiveScenario(firstPersonal);
+    setActiveScenario(SCENARIO_DECK[0]);
     setMarkdownByMode(prev => ({ ...prev, PERSONAL: STRICT_VAULT_CONSTITUTION_MD }));
-    runEvaluation(firstPersonal, STRICT_VAULT_CONSTITUTION_MD, 'PERSONAL', false);
+    runEvaluation(SCENARIO_DECK[0], STRICT_VAULT_CONSTITUTION_MD, 'PERSONAL', false);
   };
 
   const handleResetLedger = () => {
-    ledger.resetLedger();
+    gateway.resetLedger();
     runEvaluation(activeScenario, currentMarkdown, mode, false);
   };
 
+  const handleSaveSettings = (nextSettings: ConnectionSettings) => {
+    setSettings(nextSettings);
+    const nextGateway = createPayPalGateway({
+      clientId: nextSettings.paypalClientId, clientSecret: nextSettings.paypalClientSecret
+    });
+    setGateway(nextGateway);
+    setEvaluation(evaluateToolCall(activeScenario.call, policy, nextGateway));
+    setLedgerTick(t => t + 1);
+  };
+
+  const handleProposeToolCall = (call: McpToolCall, proposal: AgentProposal) => {
+    const customScenario: ScenarioDefinition = {
+      id: 'P1', mode,
+      badge: `AI: ${proposal.modelUsed.split('-')[0]}`,
+      title: proposal.toolCall.agentSummary,
+      subtitle: proposal.rationale,
+      expectedVerdict: 'AUTO_EXECUTE',
+      call
+    };
+    setActiveScenario(customScenario);
+    const nextEval = evaluateToolCall(call, policy, gateway);
+    setEvaluation(nextEval);
+    setIsModalOpen(nextEval.verdict === 'PAUSE_FOR_APPROVAL');
+    setLedgerTick(t => t + 1);
+  };
+
   const handleExecuteAuto = () => {
-    const executed = executeAutonomousCall(evaluation, ledger);
-    setEvaluation(executed);
+    setEvaluation(executeAutonomousCall(evaluation, gateway));
     setLedgerTick(t => t + 1);
   };
 
   const handleApprovalDecision = (action: ApprovalAction) => {
-    const resolved = resolveApprovalDecision(evaluation, action, ledger, evaluation.payloadHash);
-    setEvaluation(resolved);
+    setEvaluation(resolveApprovalDecision(evaluation, action, gateway, evaluation.payloadHash));
     setIsModalOpen(false);
     setLedgerTick(t => t + 1);
   };
@@ -104,52 +123,44 @@ export const App: React.FC = () => {
   return (
     <div className="app-shell" data-ledger-tick={ledgerTick}>
       <TopTelemetryBar
-        mode={mode}
-        onSelectMode={handleSelectMode}
-        rolling24hSpendUsd={ledger.getRolling24hSpendUsd()}
+        mode={mode} onSelectMode={handleSelectMode}
+        rolling24hSpendUsd={gateway.getRolling24hSpendUsd()}
         dailyCapUsd={policy.dailySpendCapUsd}
-        gatewayMode={ledger.gatewayMode}
+        gatewayMode={gateway.gatewayMode}
         isFailClosed={policy.isFailClosed}
         onResetLedger={handleResetLedger}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
-
       <div className="page-intro">
-        <div><h1>Your payments. Your rules.</h1>
-          <p>Give your AI assistant clear limits. Stay in control of every payment.</p></div>
-        <span className="intro-note">Explore with sample payments.<br />No real money moves.</span>
+        <div>
+          <h1>Your payments. Your rules.</h1>
+          <p>Autonomous AI Agent with strict spend controls & live PayPal Sandbox verification.</p>
+        </div>
+        <span className="intro-note">
+          {gateway.gatewayMode === 'LIVE_PAYPAL_SANDBOX' ? 'Connected to PayPal Sandbox' : 'Local Demo Sandbox'}<br />
+          No real money moves.
+        </span>
       </div>
-
+      <AgentPromptBar
+        onProposeToolCall={handleProposeToolCall}
+        agentConfig={{
+          provider: settings.aiProvider,
+          apiKey: settings.aiApiKey,
+          modelName: settings.aiModel,
+          baseUrl: settings.ollamaEndpoint
+        }}
+      />
       <main className="command-grid">
-        <SimulatorPane
-          scenarios={getScenariosByMode(mode)}
-          activeScenario={activeScenario}
-          onSelectScenario={handleSelectScenario}
-        />
-
-        <FirewallTracePane
-          evaluation={evaluation}
-          policy={policy}
-          onExecuteAuto={handleExecuteAuto}
-          onOpenApprovalModal={() => setIsModalOpen(true)}
-        />
-        <ConstitutionPane
-          markdown={currentMarkdown}
-          onChangeMarkdown={handleMarkdownChange}
-          onUpdatePolicy={handleUpdatePolicy}
-          onRestoreDefault={handleRestorePreset}
-          onApplyStrictVault={handleApplyStrictVault}
-          policy={policy}
-        />
-
+        <SimulatorPane scenarios={getScenariosByMode(mode)} activeScenario={activeScenario} onSelectScenario={handleSelectScenario} />
+        <FirewallTracePane evaluation={evaluation} policy={policy} onExecuteAuto={handleExecuteAuto} onOpenApprovalModal={() => setIsModalOpen(true)} />
+        <ConstitutionPane markdown={currentMarkdown} onChangeMarkdown={handleMarkdownChange} onUpdatePolicy={handleUpdatePolicy} onRestoreDefault={handleRestorePreset} onApplyStrictVault={handleApplyStrictVault} policy={policy} />
       </main>
-      <footer className="page-footer"><span>AllowAgent MCP</span><span>An independent demo built with PayPal tools.</span></footer>
-
+      <footer className="page-footer"><span>AllowAgent MCP</span><span>Autonomous AI Agent spend firewall for PayPal.</span></footer>
       {isModalOpen && evaluation.verdict === 'PAUSE_FOR_APPROVAL' && (
-        <ApprovalDiffModal
-          evaluation={evaluation}
-          onDecision={handleApprovalDecision}
-          onClose={() => setIsModalOpen(false)}
-        />
+        <ApprovalDiffModal evaluation={evaluation} onDecision={handleApprovalDecision} onClose={() => setIsModalOpen(false)} />
+      )}
+      {isSettingsOpen && (
+        <ConnectionModal settings={settings} onSave={handleSaveSettings} onClose={() => setIsSettingsOpen(false)} />
       )}
     </div>
   );
