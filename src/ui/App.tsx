@@ -143,7 +143,12 @@ export const App: React.FC = () => {
       </div>
       <AgentPromptBar
         onProposeToolCall={handleProposeToolCall}
-        agentConfig={{ provider: settings.aiProvider, apiKey: settings.aiApiKey }}
+        agentConfig={{
+          provider: settings.aiProvider,
+          apiKey: settings.aiApiKey,
+          modelName: settings.aiModel,
+          baseUrl: settings.ollamaEndpoint
+        }}
       />
       <main className="command-grid">
         <SimulatorPane scenarios={getScenariosByMode(mode)} activeScenario={activeScenario} onSelectScenario={handleSelectScenario} />

@@ -17,12 +17,12 @@
   - Task 10: PayPal 2024–2025 Brand Refresh & Authentic Developer Console UI/UX (26/26 tests passing, strict `<200` lines/file verified)
   - Task 11: Real PayPal Console Alignment Overhaul (26/26 tests passing, strict `<200` lines/file verified)
   - Task 12: Customer payment dashboard refinement and plain-language reviews (29/29 tests passing, strict `<200` lines/file verified)
-  - Task 13: 5-Pass Self-Proof Live PayPal Sandbox & Autonomous AI Agent Integration (42/42 tests passing, strict `<200` lines/file verified):
+  - Task 13: 5-Pass Self-Proof Live PayPal Sandbox & Autonomous AI Agent Integration (44/44 tests passing, strict `<200` lines/file verified):
     - Pass 1 (Security): Implemented standard FIPS 180-4 SHA-256 (`src/firewall/sha256.ts`) replacing 32-bit FNV hash; enforced one-time consumption checks across both autonomous and approved execution paths.
     - Pass 2 (UX): Interactive AI Agent Prompt bar (`src/ui/components/AgentPromptBar.tsx`) and PayPal & AI Settings modal (`src/ui/components/ConnectionModal.tsx`) for live credential configuration and connection testing.
     - Pass 3 (PayPal Realism): Implemented `LivePayPalClient` (`src/paypal/live-client.ts`) with OAuth 2.0 Client Credentials token exchange and PayPal Sandbox REST endpoints (`/v2/invoicing`, `/v2/checkout/orders`, `/v2/payments/captures`).
-    - Pass 4 (AI Integration): Implemented `AutonomousAgent` (`src/agent/agent-client.ts`) with `@paypal/agent-toolkit` schemas, live Gemini 2.5 and OpenAI GPT-4o tool-calling, and zero-key local reasoning fallback.
+    - Pass 4 (AI Integration): Implemented `AutonomousAgent` (`src/agent/agent-client.ts`) with `@paypal/agent-toolkit` schemas, live Ollama, Groq, Gemini 2.5 and OpenAI GPT-4o tool-calling, and zero-key local reasoning fallback.
     - Pass 5 (Evidential Credibility): Reconciled `PRODUCT.md` and `README.md` to be 100% truthful; added AI Tools Disclosure and authoring complete <3-minute YouTube video demonstration script in `docs/DEMO.md`.
-- **Current Status:** 42/42 tests passing, strict `<200` lines/file verified, TypeScript compiling cleanly, production build passing. Active branch: `feature/paypal-ai-live-integration`.
+- **Current Status:** 44/44 tests passing, strict `<200` lines/file verified, TypeScript compiling cleanly, production build passing. Active branch: `feature/paypal-ai-live-integration`.
 - **Next Task:** Record the under-3-minute demonstration video using `docs/DEMO.md` script, update the YouTube link in `README.md`, and proceed with final Devpost submission.
 

@@ -40,7 +40,11 @@ export const AgentPromptBar: React.FC<AgentPromptBarProps> = ({ onProposeToolCal
       ? 'OpenAI GPT-4o'
       : agentConfig?.provider === 'gemini'
         ? 'Gemini 2.5'
-        : 'Local Reasoner';
+        : agentConfig?.provider === 'groq'
+          ? 'Groq (Llama 3.3)'
+          : agentConfig?.provider === 'ollama'
+            ? `Ollama: ${agentConfig.modelName || 'mistral-large-4:cloud'}`
+            : 'Local Reasoner';
 
   return (
     <div className="agent-prompt-section">

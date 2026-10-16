@@ -91,4 +91,87 @@ describe('Autonomous AI Agent — Financial Tool Calling & Intent Reasoning', ()
       })
     );
   });
+
+  it('calls Groq endpoint when Groq key is provided', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: 'Groq function call',
+              tool_calls: [
+                {
+                  id: 'call_groq_1',
+                  type: 'function',
+                  function: {
+                    name: 'create_refund',
+                    arguments: JSON.stringify({ orderId: 'ORD-772', amountUsd: 24 })
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      })
+    });
+
+    const proposal = await generateAgentProposal('Refund $24 for ORD-772', {
+      provider: 'groq',
+      apiKey: 'gsk_mock_groq_key'
+    });
+
+    expect(proposal.modelUsed).toContain('llama');
+    expect(proposal.toolCall.toolName).toBe('create_refund');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'https://api.groq.com/openai/v1/chat/completions',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer gsk_mock_groq_key'
+        })
+      })
+    );
+  });
+
+  it('calls Ollama endpoint when provider is ollama', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: 'Ollama model reasoning',
+              tool_calls: [
+                {
+                  id: 'call_ollama_1',
+                  type: 'function',
+                  function: {
+                    name: 'pay_order',
+                    arguments: JSON.stringify({ orderId: 'ORD-101', amountUsd: 28 })
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      })
+    });
+
+    const proposal = await generateAgentProposal('Pay $28 for ORD-101', {
+      provider: 'ollama',
+      modelName: 'mistral-large-4:cloud',
+      baseUrl: 'http://localhost:11434/v1'
+    });
+
+    expect(proposal.modelUsed).toBe('mistral-large-4:cloud');
+    expect(proposal.toolCall.toolName).toBe('pay_order');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:11434/v1/chat/completions',
+      expect.objectContaining({
+        method: 'POST'
+      })
+    );
+  });
 });
+
