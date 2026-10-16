@@ -11,4 +11,5 @@
   - Task 4: 3-Vector Taint & Indirect Prompt Injection Scanner (12 tests passing total)
   - Task 5: Modular PayPal Read-vs-Write Cross-Examiner (16 tests passing total)
   - Task 6: Pure Constitutional Policy Evaluator & One-Time Recomputed Approval Gate (22 tests passing total)
-- **Next Task:** Task 7 (Interactive Scenario Deck & Pure Pipeline Runner)
+  - Task 7: Interactive Scenario Deck & Pure Pipeline Runner (25 tests passing total)
+- **Next Task:** Task 8 (3-Pane Command Center UI, Interactive Policy Controls & Approval Diff Modal)
