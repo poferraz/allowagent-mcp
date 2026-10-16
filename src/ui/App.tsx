@@ -57,7 +57,7 @@ export const App: React.FC = () => {
 
   const handleSelectScenario = (scen: ScenarioDefinition) => {
     setActiveScenario(scen);
-    runEvaluation(scen, currentMarkdown, mode, true);
+    runEvaluation(scen, currentMarkdown, mode, false);
   };
 
   const handleMarkdownChange = (nextMd: string) => {
@@ -113,7 +113,25 @@ export const App: React.FC = () => {
         onResetLedger={handleResetLedger}
       />
 
+      <div className="page-intro">
+        <div><h1>Your payments. Your rules.</h1>
+          <p>Give your AI assistant clear limits. Stay in control of every payment.</p></div>
+        <span className="intro-note">Explore with sample payments.<br />No real money moves.</span>
+      </div>
+
       <main className="command-grid">
+        <SimulatorPane
+          scenarios={getScenariosByMode(mode)}
+          activeScenario={activeScenario}
+          onSelectScenario={handleSelectScenario}
+        />
+
+        <FirewallTracePane
+          evaluation={evaluation}
+          policy={policy}
+          onExecuteAuto={handleExecuteAuto}
+          onOpenApprovalModal={() => setIsModalOpen(true)}
+        />
         <ConstitutionPane
           markdown={currentMarkdown}
           onChangeMarkdown={handleMarkdownChange}
@@ -123,18 +141,8 @@ export const App: React.FC = () => {
           policy={policy}
         />
 
-        <SimulatorPane
-          scenarios={getScenariosByMode(mode)}
-          activeScenario={activeScenario}
-          onSelectScenario={handleSelectScenario}
-        />
-
-        <FirewallTracePane
-          evaluation={evaluation}
-          onExecuteAuto={handleExecuteAuto}
-          onOpenApprovalModal={() => setIsModalOpen(true)}
-        />
       </main>
+      <footer className="page-footer"><span>AllowAgent MCP</span><span>An independent demo built with PayPal tools.</span></footer>
 
       {isModalOpen && evaluation.verdict === 'PAUSE_FOR_APPROVAL' && (
         <ApprovalDiffModal

@@ -1,4 +1,13 @@
 .superpowers/
 node_modules/
 dist/
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+coverage/
+
+# Local design references may contain personal information.
+/docs/references-design/
 
