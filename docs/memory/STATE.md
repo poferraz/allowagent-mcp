@@ -18,11 +18,10 @@
   - Task 11: Real PayPal Console Alignment Overhaul (26/26 tests passing, strict `<200` lines/file verified)
   - Task 12: Customer payment dashboard refinement and plain-language reviews (29/29 tests passing, strict `<200` lines/file verified)
   - Task 13: 5-Pass Self-Proof Live PayPal Sandbox & Autonomous AI Agent Integration (44/44 tests passing, strict `<200` lines/file verified)
-  - Task 14: 5-Pass Rigorous Self-Proof Testing, Red-Teaming & UX Friction Fixes (59/59 tests passing, strict `<200` lines/file verified):
-    - Pass 1 (AST Invariants): Case-insensitive boolean directive parsing in `src/constitution/parser.ts` (`True`/`False`), zero-warning compilation, 100% `<200` lines/file verified.
-    - Pass 2 (Engine & Invariants): Non-monetary MCP tool support (`cancel_subscription` without mandatory `amountUsd`), prefix-standardized replay defense errors (`Replay Defense: Evaluation already processed`).
-    - Pass 3 (Live Gateway): Live OAuth and sandbox API state verification with initial seed offset verification.
-    - Pass 4 (Multi-Model AI Agent): Real live Ollama Cloud `mistral-large-4:cloud` tool calling verified (3.7s live test), reasoning/thinking trace extraction (`message.reasoning`), string amount coercion, and model refusal preservation (preventing silent fallback to local reasoner when external model explicitly refuses attack).
-    - Pass 5 (Interactive UX & Friction): Connection settings persisted in `localStorage` with out-of-the-box Ollama Mistral Large 4 defaults, error banner rendering in `AgentPromptBar`, safe `money()` formatting without `$NaN`, and verified interaction across all buttons, sliders, modals, and preset switches.
-- **Current Status:** 59/59 tests passing in ~3s, strict `<200` lines/file verified across all `src/` files, TypeScript compiling cleanly (`tsc --noEmit`), dev server live on port 5173. Active branch: `test/5-pass-selfproof-verification`.
-- **Next Task:** Merge `test/5-pass-selfproof-verification` to `main`, record demo video following `docs/DEMO.md`, and submit to Devpost.
+  - Task 14: 5-Pass Rigorous Self-Proof Testing, Red-Teaming & UX Friction Fixes (59/59 tests passing, strict `<200` lines/file verified)
+  - Task 15: Resilient Settings & Constitution Multi-Tier Persistence (64/64 tests passing, strict `<200` lines/file verified):
+    - Added `src/ui/storage.ts` with triple-tier persistence (`localStorage` -> `sessionStorage` -> `document.cookie`) with `globalThis` support.
+    - Updated `ConnectionModal.tsx` and `App.tsx` to reliably persist both PayPal credentials / AI configs and `markdownByMode` constitution policies across browser refreshes.
+    - Fixed button submission quirks with explicit `onClick={() => handleApply()}` and immediate dual-storage synchronization.
+- **Current Status:** 64/64 tests passing in ~3s, strict `<200` lines/file verified across all `src/` files, TypeScript compiling cleanly (`tsc --noEmit`), dev server live on port 5173.
+- **Next Task:** Record demo video following `docs/DEMO.md`, and submit to Devpost.
