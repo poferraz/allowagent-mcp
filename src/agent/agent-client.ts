@@ -129,12 +129,22 @@ async function callOpenAiCompatible(prompt: string, endpoint: string, model: str
     })
   });
   if (!res.ok) return null;
-  const data = await res.json() as { choices?: Array<{ message?: { content?: string; tool_calls?: Array<{ function: { name: string; arguments: string } }> } }> };
-  const tc = data.choices?.[0]?.message?.tool_calls?.[0];
-  if (!tc) return null;
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string; reasoning?: string; tool_calls?: Array<{ function: { name: string; arguments: string } }> } }> };
+  const choice = data.choices?.[0]?.message;
+  const tc = choice?.tool_calls?.[0];
+  if (!tc) {
+    if (choice?.content && /(cannot|can't|refuse|sorry|blocked|not allowed|safety)/i.test(choice.content)) {
+      throw new Error(`${model} refused: ${choice.content}`);
+    }
+    return null;
+  }
+  const args = JSON.parse(tc.function.arguments || '{}');
+  if (typeof args.amountUsd === 'string') args.amountUsd = parseFloat(args.amountUsd);
+  else if (args.amountUsd === undefined && args.amount !== undefined) args.amountUsd = Number(args.amount);
+  const rationale = choice?.reasoning || choice?.content || `${model} generated tool call ${tc.function.name}.`;
   return {
-    toolCall: { id: `call-${Date.now()}`, toolName: tc.function.name as McpToolCall['toolName'], agentSummary: prompt, args: JSON.parse(tc.function.arguments) },
-    rationale: data.choices?.[0]?.message?.content || `${model} generated tool call ${tc.function.name}.`,
+    toolCall: { id: `call-${Date.now()}`, toolName: tc.function.name as McpToolCall['toolName'], agentSummary: prompt, args },
+    rationale,
     modelUsed: model,
     confidence: 0.95
   };

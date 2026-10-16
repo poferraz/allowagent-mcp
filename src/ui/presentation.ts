@@ -2,9 +2,9 @@ import type { PayPalMcpWriteTool } from '../types/mcp';
 import type { ScenarioDefinition } from '../simulator/scenarios';
 import type { ContradictionCode } from '../types/firewall';
 
-export const money = (amount: number) => new Intl.NumberFormat('en-US', {
+export const money = (amount?: number | null) => new Intl.NumberFormat('en-US', {
   style: 'currency', currency: 'USD'
-}).format(amount);
+}).format(typeof amount === 'number' && Number.isFinite(amount) ? amount : 0);
 
 export const TOOL_LABELS: Record<PayPalMcpWriteTool, string> = {
   pay_order: 'Pay orders', record_payment_for_invoice: 'Record invoice payments',

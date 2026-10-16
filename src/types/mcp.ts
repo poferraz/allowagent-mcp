@@ -24,7 +24,7 @@ export interface McpToolArgs {
   subscriptionId?: string;
   recipientName?: string;
   recipientEmail?: string;
-  amountUsd: number;
+  amountUsd?: number;
   currency?: 'USD';
   reason?: string;
 }

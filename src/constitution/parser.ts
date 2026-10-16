@@ -17,8 +17,9 @@ function parseStrictBool(
 ): boolean {
   const raw = extractSingleDirective(markdown, label, warnings);
   if (raw === null) return true;
-  if (raw === 'true') return true;
-  if (raw === 'false') return false;
+  const lower = raw.trim().toLowerCase();
+  if (lower === 'true') return true;
+  if (lower === 'false') return false;
   warnings.push(`Invalid boolean for "${label}": "${raw}".`);
   return true;
 }

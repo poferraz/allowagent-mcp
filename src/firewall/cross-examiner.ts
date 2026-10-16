@@ -18,11 +18,10 @@ export function crossExamineToolCall(
     ledgerCitations: []
   };
 
-  const allowZero = call.toolName === 'cancel_subscription';
-  const amountValid =
-    typeof call.args.amountUsd === 'number' &&
-    Number.isFinite(call.args.amountUsd) &&
-    (allowZero ? call.args.amountUsd >= 0 : call.args.amountUsd > 0);
+  const isNoAmountTool = call.toolName === 'cancel_subscription';
+  const amountValid = isNoAmountTool
+    ? (call.args.amountUsd === undefined || (typeof call.args.amountUsd === 'number' && Number.isFinite(call.args.amountUsd) && call.args.amountUsd >= 0))
+    : (typeof call.args.amountUsd === 'number' && Number.isFinite(call.args.amountUsd) && call.args.amountUsd > 0);
 
   if (!amountValid) {
     acc.verifiedFactsComplete = false;
