@@ -222,3 +222,24 @@ To ensure zero friction for non-technical consumers and busy merchants, `Constit
    - **How Much It Can Spend:** Interactive sliders/inputs for `Max Auto-Pay ($)`, `Daily Spend Limit ($)`, and `Price Creep Tolerance (%)`.
    - **Where It Can Spend (Allowed PayPal Capabilities):** 1-click capability toggles for `pay_order`, `record_payment_for_invoice`, `create_refund`, and `accept_dispute_claim` (`allowedTools` in `SpendPolicy`). Any disabled tool is immediately `HARD_BLOCK`ed (`TOOL_NOT_ALLOWED_IN_CONSTITUTION`).
    - **Who To Rely On (Trusted PayPal Vendors Allowlist):** Interactive vendor chips (`autopay@metrofiber.com`, `billing@saraheco.ca`, `studio@nordicdesign.io`) with 1-click add/remove plus a **Strict Constitutional Lock** switch (`unknownVendorAction: 'HARD_BLOCK' | 'PAUSE_FOR_APPROVAL'`).
+
+---
+
+## 7. GPT Astra High 5-Pass Adversarial Audit Remediation (`2026-10-16`)
+
+Following the independent 5-pass adversarial audit (`docs/superpowers/audits/2026-10-16-gpt-astra-high-audit.md`), the architecture and implementation plan enforce these non-negotiable engineering invariants:
+
+1. **Strict Line-Anchored Compiler & Missing-Capability Default-Deny (`S1`):**
+   - Missing or malformed `Allowed Tools:` in `PAYPAL.md` defaults to `[]` (zero tools allowed) and marks `isFailClosed = true`.
+   - Every numeric limit (`Max Auto-Pay`, `Daily Spend Limit`, `Max Auto-Refund`, `Price Creep Tolerance`) is validated with full-string anchored regexes (`/^\$?(0|[1-9]\d{0,8})(\.\d{1,2})?(\s*USD)?$/i` and `/^(0|[1-9]\d{0,2})(\.\d{1,2})?%$/`) so trailing garbage (`$40.00garbage`, `.%`) or duplicate directives immediately trigger `isFailClosed = true` (`0` auto-pay/refund limits).
+2. **Positive Resource Verification (`verifiedFactsComplete`) Over Absence-of-Findings (`S2`, `A1`, `A2`, `A4`):**
+   - `evaluateToolCall` never grants `AUTO_EXECUTE` merely because `findings.length === 0`.
+   - Every tool requires positive argument and ledger verification (`verifiedFactsComplete === true`): finite positive USD amounts (`> 0` for transfers/refunds), mandatory target resource ID (`invoiceId`, `orderId`, `disputeId`, `subscriptionId`), existence of the resource in the PayPal ledger, and strict binding to the ledger's authoritative vendor/order/amount (e.g., `accept_dispute_claim` always resolves `orderId` from `dispute.orderId` in the ledger and ignores caller-spoofed `orderId` overrides).
+3. **Ledger-Sourced Untrusted Text Scanning (`S3`):**
+   - Stage 2 scans both caller-supplied `untrustedContext` and authoritative untrusted text stored on the target PayPal ledger record (`invoice.note`, `dispute.buyerMessage`) so an agent cannot bypass scanning by omitting `untrustedContext`.
+4. **Pure Preview Evaluation vs. Explicit One-Time Execution (`Q1`, `S4`, `S5`, `A5`):**
+   - `evaluateToolCall` is **100% pure** (`executionStatus: 'NOT_EXECUTED' | 'PAUSED' | 'BLOCKED'`). Rendering, switching scenarios/modes, editing `PAYPAL.md`, or resetting the ledger never mutates `StatefulLedgerClient`.
+   - Ledger mutation occurs exclusively in `executeEvaluatedCall` / `resolveApprovalDecision`, which recomputes the canonical SHA-256-style digest over all consequential fields (`toolName`, `args`, `verifiedBaselineUsd`), verifies one-time consumption (`consumedEvaluations` set) to prevent replay/double-click exploits, and dispatches per-tool state transitions.
+5. **Complete Interactive Controls & `<200` Line Enforcement (`U1–U5`, `Q2–Q5`):**
+   - `ConstitutionPane` + `PolicyControls` expose all 4 numeric thresholds (`Max Auto-Pay`, `Daily Spend Limit`, `Max Auto-Refund`, `Price Creep Tolerance`), all 7 MCP write tools, and both **Add Trusted Vendor** and **Remove Trusted Vendor** controls, plus a **"Trust Vendor for Future"** option in the Approval Modal.
+   - Cross-examination is modularized into `src/firewall/cross-examiner.ts`, `src/firewall/payment-checks.ts`, and `src/firewall/ops-checks.ts`, keeping every file in `src/` strictly `<200` lines, enforced by `scripts/check-source-lines.mjs` during `npm run verify`.
