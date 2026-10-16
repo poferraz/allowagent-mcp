@@ -18,21 +18,23 @@ React 19, TypeScript 5.7, Vite 6, Tailwind CSS, Lucide Icons, Vitest
 
 ## Product Purpose
 
-AllowAgent MCP is a Constitutional Spend Firewall and Red-Team Command Center for PayPal AI Agents. It intercepts autonomous tool calls from `@paypal/agent-toolkit`, compiles human-authored `PAYPAL.md` policies into deterministic AST spend gates, cross-examines proposed payments against authoritative PayPal ledger records, and blocks indirect prompt injection before money moves.
+AllowAgent MCP is a Constitutional Spend Firewall and Command Center for PayPal AI Agents. It monitors autonomous tool calls conforming to `@paypal/agent-toolkit` schemas, compiles human-authored `PAYPAL.md` policies into deterministic AST spend gates, cross-examines proposed payments against authoritative PayPal Sandbox or local ledger records, and blocks indirect prompt injection before money moves.
 
 ## Positioning
 
-Unlike fuzzy LLM guardrails that rely on prompt-based self-policing, AllowAgent MCP operates as an unbypassable, deterministic financial firewall:
+Unlike fuzzy LLM guardrails that rely on prompt-based self-policing, AllowAgent MCP operates as a deterministic reference monitor for financial tool calls:
 - **Positive Verification:** Autonomous execution (`AUTO_EXECUTE`) is permitted strictly when authoritative PayPal read-records positively corroborate the claim.
 - **Fail-Closed Compilation:** Malformed, missing, or contradictory directives in `PAYPAL.md` immediately lock limits to `$0.00`.
-- **One-Time Hash-Bound Execution:** Evaluations produce single-use cryptographic digests preventing replay attacks.
+- **One-Time Hash-Bound Execution:** Evaluations produce single-use cryptographic SHA-256 digests preventing replay attacks and execution tampering.
 - **Evidence-Based Diff Modal:** Human-in-the-loop approvals show historical baseline vs. proposed delta, allowing single-click baseline remediation.
 
 ## Operating Context
 
-- Operates as a middleware governance firewall between autonomous agent runtimes (Claude, GPT, Gemini, LangChain) and the PayPal API / Sandbox Ledger.
+- Operates as a governance firewall between autonomous agent runtimes (Claude, GPT, Gemini) and the PayPal API / Sandbox Ledger.
 - Integrates with `@paypal/agent-toolkit` tool schemas: `pay_order`, `record_payment_for_invoice`, `create_refund`, `accept_dispute_claim`, `update_subscription`, `create_order`, `cancel_subscription`.
-- Provides a customer-facing payment dashboard with spending settings, sample requests, plain-language decisions, and optional technical evidence. Personal and business examples remain available.
+- Supports dual gateway environments: a fast in-memory sandbox ledger for instant testing, and a live PayPal Sandbox API client (`api-m.sandbox.paypal.com`) using OAuth 2.0 client credentials.
+- Includes an Autonomous AI Agent prompt interface supporting live Gemini/OpenAI tool-calling alongside a zero-configuration local financial reasoner.
+- Provides a customer-facing payment dashboard with spending settings, plain-language decisions, and optional technical evidence.
 
 ## Capabilities and Constraints
 
@@ -56,9 +58,9 @@ Unlike fuzzy LLM guardrails that rely on prompt-based self-policing, AllowAgent 
 
 ## Evidence on Hand
 
-- 29 passing automated tests spanning parser compilation, 3-vector taint detection, ledger cross-examination, approval gates, and UI rendering.
+- 42 passing automated tests spanning parser compilation, 3-vector taint detection, FIPS 180-4 SHA-256 cryptographic digests, PayPal Sandbox REST client, autonomous AI tool-calling, ledger cross-examination, and UI rendering.
 - 6 pre-configured red-team scenarios reproducing real-world attack vectors (cleaner invoice price creep, spoofed vendor prompt injection, runaway refund drain, supplier wire fraud).
-- Live sandbox ledger and simulated PayPal read tools (`get_order_details`, `get_invoice_details`, `list_disputes`, `show_subscription_details`).
+- Dual execution backends: fast in-memory sandbox ledger client and live PayPal Sandbox REST client (`api-m.sandbox.paypal.com`).
 
 ## Product Principles
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computePayloadHash,
+  executeAutonomousCall,
   resolveApprovalDecision
 } from '../../src/firewall/approval-gate';
 import { evaluateToolCall } from '../../src/firewall/policy-evaluator';
@@ -28,8 +29,36 @@ describe('Cryptographic Approval Gate, Tamper Re-Verification & One-Time Consump
       },
       150
     );
-    expect(h1).toMatch(/^sha256-[0-9a-f]{8}$/);
+    expect(h1).toMatch(/^sha256-[0-9a-f]{64}$/);
     expect(h1).not.toBe(h2);
+  });
+
+  it('enforces one-time consumption for executeAutonomousCall preventing replays', () => {
+    const ledger = new StatefulLedgerClient();
+    const policy = compileConstitution(PERSONAL_CONSTITUTION_MD, 'PERSONAL');
+    const evaluation = evaluateToolCall(
+      {
+        id: 'call-auto-internet',
+        toolName: 'pay_order',
+        agentSummary: 'Pay monthly internet',
+        args: {
+          orderId: 'ORD-101',
+          invoiceId: 'INV2-METRO-01',
+          recipientName: 'Metro Fiber',
+          recipientEmail: 'autopay@metrofiber.com',
+          amountUsd: 28
+        }
+      },
+      policy,
+      ledger
+    );
+
+    expect(evaluation.verdict).toBe('AUTO_EXECUTE');
+    const executed = executeAutonomousCall(evaluation, ledger);
+    expect(executed.executionStatus).toBe('EXECUTED_FULL');
+
+    // Replay attempt must throw
+    expect(() => executeAutonomousCall(evaluation, ledger)).toThrow(/already consumed/i);
   });
 
   it('amends price-creep invoice from $185 down to $150 verified baseline and blocks replay', () => {
