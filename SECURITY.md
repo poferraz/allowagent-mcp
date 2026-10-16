@@ -1,5 +1,17 @@
 # Security & Threat Model — AllowAgent MCP
 
+## Reporting a vulnerability
+
+Use the repository's **Security → Report a vulnerability** feature for private reports.
+Include reproduction steps, affected versions, and expected behavior. Do not post
+credentials, private account records, or exploitable details in a public issue.
+If private reporting is unavailable, open an issue asking for a private reporting
+channel without disclosing the vulnerability.
+
+This is an experimental demo, not an audited production payment system. The current
+gateway uses sample records in memory and does not contact PayPal. Pattern matching
+for suspicious instructions is advisory and cannot detect every prompt injection.
+
 ## Authorization Boundary
 Untrusted external text -> Agent-selected MCP tool & arguments -> Deterministic Validator -> `PAYPAL.md` Constitution + Authoritative PayPal Read Ledger -> Pure Preview Verdict -> Explicit Human Confirmation / One-Time Executor -> PayPal Ledger / Sandbox.
 

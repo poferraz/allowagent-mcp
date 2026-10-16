@@ -1,30 +1,17 @@
 import React, { useState } from 'react';
+import { Check, X, Plus } from 'lucide-react';
 import { ALL_WRITE_TOOLS } from '../../constitution/directives';
 import type { SpendPolicy } from '../../types/constitution';
 import type { PayPalMcpWriteTool } from '../../types/mcp';
+import { TOOL_LABELS, money } from '../presentation';
+import { HelpTip } from './HelpTip';
 
-const TOOL_LABELS: Record<PayPalMcpWriteTool, string> = {
-  pay_order: 'Pay Orders',
-  record_payment_for_invoice: 'Pay Invoices',
-  create_refund: 'Issue Refunds',
-  accept_dispute_claim: 'Surrender Disputes',
-  update_subscription: 'Update Subscriptions',
-  create_order: 'Create Orders',
-  cancel_subscription: 'Cancel Subscriptions'
-};
-
-const SLIDER_FIELDS: {
-  key: 'maxAutoPayUsd' | 'dailySpendCapUsd' | 'maxAutoRefundUsd' | 'priceCreepTolerancePercent';
-  label: string;
-  max: number;
-  step: number;
-  unit: '$' | '%';
-}[] = [
-  { key: 'maxAutoPayUsd', label: 'Max Auto-Pay', max: 250, step: 5, unit: '$' },
-  { key: 'dailySpendCapUsd', label: '24h Spend Cap', max: 1000, step: 25, unit: '$' },
-  { key: 'maxAutoRefundUsd', label: 'Max Auto-Refund', max: 100, step: 5, unit: '$' },
-  { key: 'priceCreepTolerancePercent', label: 'Price Creep Limit', max: 30, step: 5, unit: '%' }
-];
+const LIMITS = [
+  { key: 'maxAutoPayUsd', label: 'Automatic payment limit', max: 250, step: 5, help: 'The most your assistant can pay per request without asking you. Other checks still apply.' },
+  { key: 'dailySpendCapUsd', label: 'Spending limit for 24 hours', max: 1000, step: 25, help: 'Requests that take demo payment spending above this limit need your review.' },
+  { key: 'maxAutoRefundUsd', label: 'Automatic refund limit', max: 100, step: 5, help: 'The most your assistant can refund per request without asking you.' },
+  { key: 'priceCreepTolerancePercent', label: 'Price increase limit', max: 30, step: 5, help: 'Ask for review when an invoice rises by more than this percentage above its historical average.' }
+] as const;
 
 export interface PolicyControlsProps {
   policy: SpendPolicy;
@@ -32,134 +19,61 @@ export interface PolicyControlsProps {
 }
 
 export const PolicyControls: React.FC<PolicyControlsProps> = ({ policy, onUpdatePolicy }) => {
-  const [newVendorName, setNewVendorName] = useState('');
-  const [newVendorEmail, setNewVendorEmail] = useState('');
-
-  const toggleTool = (tool: PayPalMcpWriteTool) => {
-    const exists = policy.allowedTools.includes(tool);
-    const allowedTools = exists
-      ? policy.allowedTools.filter(t => t !== tool)
-      : [...policy.allowedTools, tool];
-    onUpdatePolicy({ ...policy, allowedTools });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const toggleTool = (tool: PayPalMcpWriteTool) => onUpdatePolicy({ ...policy,
+    allowedTools: policy.allowedTools.includes(tool) ? policy.allowedTools.filter(t => t !== tool) : [...policy.allowedTools, tool]
+  });
+  const addRecipient = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalized = email.trim().toLowerCase();
+    if (policy.trustedVendors.some(v => v.email === normalized)) {
+      setError('This email address is already on your trusted list.'); return;
+    }
+    onUpdatePolicy({ ...policy, trustedVendors: [...policy.trustedVendors, { name: name.trim(), email: normalized }] });
+    setName(''); setEmail(''); setError('');
   };
-
-  const removeVendor = (email: string) => {
-    onUpdatePolicy({
-      ...policy,
-      trustedVendors: policy.trustedVendors.filter(v => v.email !== email)
-    });
-  };
-
-  const handleAddVendor = () => {
-    const name = newVendorName.trim();
-    const email = newVendorEmail.trim().toLowerCase();
-    if (!name || !email.includes('@') || policy.trustedVendors.some(v => v.email === email)) return;
-    onUpdatePolicy({ ...policy, trustedVendors: [...policy.trustedVendors, { name, email }] });
-    setNewVendorName('');
-    setNewVendorEmail('');
-  };
-
-  return (
-    <div className="stage-box" style={{ display: 'grid', gap: '10px', fontSize: '0.78rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        {SLIDER_FIELDS.map(({ key, label, max, step, unit }) => (
-          <label key={key}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <strong>{label}</strong>
-              <span>{unit === '$' ? `$${policy[key].toFixed(0)}` : `${policy[key]}%`}</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={max}
-              step={step}
-              value={policy[key]}
-              onChange={e => onUpdatePolicy({ ...policy, [key]: Number(e.target.value) })}
-              style={{ width: '100%' }}
-            />
-          </label>
-        ))}
-      </div>
-
-      <div>
-        <strong style={{ display: 'block', marginBottom: '6px' }}>
-          Where It Can Spend (Allowed PayPal MCP Tools):
-        </strong>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {ALL_WRITE_TOOLS.map(tool => {
-            const active = policy.allowedTools.includes(tool);
-            return (
-              <button
-                key={tool}
-                type="button"
-                className={`btn ${active ? 'btn-green' : 'btn-secondary'}`}
-                style={{ padding: '4px 8px', fontSize: '0.7rem' }}
-                onClick={() => toggleTool(tool)}
-              >
-                {active ? '✓ ' : '✕ '}
-                {TOOL_LABELS[tool]}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <strong>Who To Rely On ({policy.trustedVendors.length} Trusted Payees):</strong>
-          <button
-            type="button"
-            className={`btn ${policy.unknownVendorPolicy === 'HARD_BLOCK' ? 'btn-red' : 'btn-secondary'}`}
-            style={{ padding: '3px 8px', fontSize: '0.7rem' }}
-            onClick={() =>
-              onUpdatePolicy({
-                ...policy,
-                unknownVendorPolicy:
-                  policy.unknownVendorPolicy === 'HARD_BLOCK' ? 'PAUSE_FOR_APPROVAL' : 'HARD_BLOCK'
-              })
-            }
-          >
-            Unlisted Vendors: {policy.unknownVendorPolicy}
-          </button>
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-          {policy.trustedVendors.map(v => (
-            <span
-              key={v.email}
-              className="badge badge-info"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textTransform: 'none' }}
-            >
-              {v.name} ({v.email})
-              <button
-                type="button"
-                onClick={() => removeVendor(v.email)}
-                style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: 0 }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <input
-            type="text"
-            placeholder="Vendor name"
-            value={newVendorName}
-            onChange={e => setNewVendorName(e.target.value)}
-            style={{ flex: 1, padding: '4px 6px', borderRadius: '4px', border: '1px solid #334155', background: '#090e1d', color: '#f1f5f9', fontSize: '0.74rem' }}
-          />
-          <input
-            type="email"
-            placeholder="billing@vendor.com"
-            value={newVendorEmail}
-            onChange={e => setNewVendorEmail(e.target.value)}
-            style={{ flex: 1, padding: '4px 6px', borderRadius: '4px', border: '1px solid #334155', background: '#090e1d', color: '#f1f5f9', fontSize: '0.74rem' }}
-          />
-          <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.72rem' }} onClick={handleAddVendor}>
-            + Trust
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return <>
+    <fieldset className="limits"><legend>Spending limits</legend>
+      {LIMITS.map(({ key, label, max, step, help }) => <div className="limit-control" key={key}>
+        <div className="limit-label"><label htmlFor={key}>{label}</label><HelpTip label={label.toLowerCase()}>{help}</HelpTip></div>
+        <div className="limit-input"><input id={key} type="range" min={0} max={Math.max(max, policy[key])} step={step}
+          value={policy[key]} aria-valuetext={key === 'priceCreepTolerancePercent' ? `${policy[key]} percent` : `${money(policy[key])} USD`}
+          onChange={e => onUpdatePolicy({ ...policy, [key]: Number(e.target.value) })} />
+          <output htmlFor={key}>{key === 'priceCreepTolerancePercent' ? `${policy[key]}%` : money(policy[key])}</output></div>
+      </div>)}
+      <p className="field-note">All amounts are in USD. Changes apply to the preview immediately.</p>
+    </fieldset>
+    <details className="settings-section"><summary>Permitted actions <span>{policy.allowedTools.length} enabled</span></summary>
+      <p className="field-note">Choose what your assistant can do. Spending limits and record checks still apply.</p>
+      <div className="tool-list">{ALL_WRITE_TOOLS.map(tool => {
+        const active = policy.allowedTools.includes(tool);
+        return <button key={tool} type="button" className="tool-toggle" aria-pressed={active}
+          title={`${active ? 'Disable' : 'Enable'} ${TOOL_LABELS[tool].toLowerCase()} for your assistant`}
+          onClick={() => toggleTool(tool)}><span>{TOOL_LABELS[tool]}</span><span className={`switch ${active ? 'on' : ''}`}><Check size={11} /></span></button>;
+      })}</div>
+    </details>
+    <details className="settings-section" open><summary>Trusted recipients <span>{policy.trustedVendors.length} saved</span></summary>
+      <p className="field-note">Your assistant still checks every request from these recipients.</p>
+      <ul className="recipient-list">{policy.trustedVendors.map(v => <li key={v.email}>
+        <div><strong>{v.name}</strong><span>{v.email}</span></div>
+        <button type="button" className="icon-button" aria-label={`Remove ${v.name}`} title={`Remove ${v.name} from your trusted recipients`}
+          onClick={() => onUpdatePolicy({ ...policy, trustedVendors: policy.trustedVendors.filter(item => item.email !== v.email) })}><X size={16} /></button>
+      </li>)}</ul>
+      <label className="select-label" htmlFor="new-recipient-policy">For other recipients</label>
+      <select id="new-recipient-policy" value={policy.unknownVendorPolicy}
+        onChange={e => onUpdatePolicy({ ...policy, unknownVendorPolicy: e.target.value as SpendPolicy['unknownVendorPolicy'] })}>
+        <option value="PAUSE_FOR_APPROVAL">Ask me to review</option><option value="HARD_BLOCK">Block the request</option>
+      </select>
+      <details className="add-recipient"><summary><Plus size={15} /> Add a trusted recipient</summary>
+        <form onSubmit={addRecipient} className="recipient-form">
+          <label htmlFor="recipient-name">Recipient name</label><input required id="recipient-name" value={name} onChange={e => setName(e.target.value)} />
+          <label htmlFor="recipient-email">Email address</label><input required type="email" id="recipient-email" value={email} onChange={e => setEmail(e.target.value)} />
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button type="submit" className="btn btn-secondary" disabled={!name.trim() || !email.trim()} title="Add this recipient to your trusted list. All payment checks still apply.">Add recipient</button>
+        </form>
+      </details>
+    </details>
+  </>;
 };
