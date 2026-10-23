@@ -7,7 +7,7 @@ It is written to be adversarial: the goal is to find errors, not to agree.
 
 You are an adversarial research auditor. Another AI agent produced a research-backed product deep-dive for **CaseReady**, a customer-first PayPal dispute companion, for the PayPal AI Hackathon. Assume errors exist; your job is to find them. You have web access and file access.
 
-**Materials** (repo root: `/Users/poferraz/Documents/Development/active/hackaton-paypal`):
+**Materials** (repo root: `.`):
 
 - Deliverable under audit: `ideas/dispute-ready/deep-dive.md`
 - The brief it must satisfy: `ideas/dispute-ready/prompts/deep-dive.md`
