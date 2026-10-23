@@ -109,4 +109,16 @@ describe('Storage Persistence Layer', () => {
     expect(restored.PERSONAL).toContain('MAX_AUTO_PAY_USD = 50.00');
     expect(restored.BUSINESS).toBe(DEFAULT_CONSTITUTIONS.BUSINESS);
   });
+
+  it('does not write sensitive connection settings to document.cookie', () => {
+    savePersistedSettings({
+      paypalClientId: 'AZ_ID',
+      paypalClientSecret: 'SEC_SECRET',
+      aiProvider: 'ollama',
+      aiApiKey: 'API_KEY',
+      aiModel: 'model',
+      ollamaEndpoint: 'http://localhost'
+    });
+    expect((document as { cookie: string }).cookie).toBe('');
+  });
 });
