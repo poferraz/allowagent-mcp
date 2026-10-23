@@ -1,16 +1,19 @@
 import type { AgentProposal } from './agent-client';
 
 export function extractAmount(text: string): number {
-  const dollarMatch = text.match(/\$\s*(\d+(\.\d{1,2})?)/);
+  // Strip comma thousands separators (e.g. $1,250.00 -> $1250.00)
+  const clean = text.replace(/(\d),(\d)/g, '$1$2');
+
+  const dollarMatch = clean.match(/\$\s*(\d+(?:\.\d{1,2})?)/);
   if (dollarMatch) return parseFloat(dollarMatch[1]);
 
-  const wordMatch = text.match(/(\d+(\.\d{1,2})?)\s*(dollars|usd|bucks)/i);
+  const wordMatch = clean.match(/(\d+(?:\.\d{1,2})?)\s*(dollars|usd|bucks)/i);
   if (wordMatch) return parseFloat(wordMatch[1]);
 
-  const prepMatch = text.match(/(?:for|the|amount|of|pay)\s+(\d+(\.\d{1,2})?)/i);
+  const prepMatch = clean.match(/(?:for|the|amount|of|pay)\s+(\d+(?:\.\d{1,2})?)/i);
   if (prepMatch) return parseFloat(prepMatch[1]);
 
-  const numMatch = text.match(/\b([1-9]\d{0,3}(\.\d{1,2})?)\b/);
+  const numMatch = clean.match(/\b([1-9]\d{0,5}(?:\.\d{1,2})?)\b/);
   if (numMatch) {
     const val = parseFloat(numMatch[1]);
     if (val !== 101 && val !== 772 && val !== 3301 && val !== 104) return val;

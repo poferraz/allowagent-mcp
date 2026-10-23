@@ -34,7 +34,8 @@ export function computePayloadHash(
     baselineCents:
       typeof verifiedBaselineUsd === 'number' ? toCents(verifiedBaselineUsd) : null,
     currency: call.args.currency ?? 'USD',
-    reason: call.args.reason ?? ''
+    reason: call.args.reason ?? '',
+    untrustedContext: call.untrustedContext ?? ''
   });
 
   return `sha256-${sha256Hex(canonical)}`;

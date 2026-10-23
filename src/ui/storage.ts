@@ -58,9 +58,10 @@ export function writeStorageItem(key: string, value: string): void {
     if (session) {
       try { session.setItem(key, value); } catch {}
     }
-    if (typeof document !== 'undefined') {
+    // Never persist sensitive connection settings or credentials into document.cookie
+    if (key !== SETTINGS_KEY && typeof document !== 'undefined') {
       try {
-        document.cookie = `${key}=${encodeURIComponent(value)};path=/;max-age=${30 * 86400};SameSite=Lax`;
+        document.cookie = `${key}=${encodeURIComponent(value)};path=/;max-age=${30 * 86400};SameSite=Lax;Secure`;
       } catch {}
     }
   } catch {}

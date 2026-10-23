@@ -17,7 +17,10 @@ const HOMOGLYPH_MAP: Record<string, string> = {
 };
 
 function normalizeConfusables(input: string): string {
-  return input.replace(/[\u0430-\u0456]/g, ch => HOMOGLYPH_MAP[ch] ?? ch);
+  return input
+    .normalize('NFKD')
+    .replace(/[\p{Cf}\p{Mn}]/gu, '')
+    .replace(/[\u0430-\u0456]/g, ch => HOMOGLYPH_MAP[ch] ?? ch);
 }
 
 const VECTOR_RULES: VectorRule[] = [

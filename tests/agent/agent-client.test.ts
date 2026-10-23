@@ -195,5 +195,10 @@ describe('Autonomous AI Agent — Financial Tool Calling & Intent Reasoning', ()
     const p4 = await generateAgentProposal('cancel gym subscription');
     expect(p4.toolCall.toolName).toBe('cancel_subscription');
   });
+
+  it('correctly parses comma-formatted amounts without numeric truncation', async () => {
+    const proposal = await generateAgentProposal('Please process refund for order ORD-772 of $1,250.00');
+    expect(proposal.toolCall.args.amountUsd).toBe(1250);
+  });
 });
 
