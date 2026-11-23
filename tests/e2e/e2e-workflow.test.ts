@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { compileConstitution } from '../../src/constitution/parser';
 import { DEFAULT_CONSTITUTIONS, STRICT_VAULT_CONSTITUTION_MD } from '../../src/constitution/presets';
 import { evaluateToolCall } from '../../src/firewall/policy-evaluator';
@@ -116,24 +116,24 @@ describe('End-to-End Workflow & Scenario Loop Verification', () => {
     expect(evaluation.crossExam.findings.some(f => f.code === 'MAX_AUTOPAY_EXCEEDED')).toBe(true);
   });
 
-  it('Live Ollama Cloud mistral-large-4:cloud integration test', async () => {
-    // Check if Ollama is accessible
+  it('uses the configured Ollama connector and converts its response into a payment preview', async () => {
+    const args = { orderId: 'ORD-101', amountUsd: 28 };
+    const reply = { choices: [{ message: { tool_calls: [{
+      function: { name: 'pay_order', arguments: JSON.stringify(args) }
+    }] } }] };
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(reply));
     try {
-      const probe = await fetch('http://localhost:11434/api/tags');
-      if (!probe.ok) return; // Skip if Ollama daemon is not running
-
-      const proposal = await generateAgentProposal('Auto-pay Metro Fiber internet bill ORD-101 for $28', {
-        provider: 'ollama',
-        modelName: 'mistral-large-4:cloud',
-        baseUrl: 'http://localhost:11434/v1'
+      const proposal = await generateAgentProposal('Review the sample bill', {
+        provider: 'ollama', modelName: 'fixture-model', baseUrl: 'http://localhost:11434/v1'
       });
-
-      if (proposal.modelUsed.includes('mistral')) {
-        expect(proposal.toolCall.toolName).toBe('pay_order');
-        expect(proposal.toolCall.args.amountUsd).toBe(28);
-      }
-    } catch {
-      // Graceful network fallback if Ollama Cloud experiences latency
+      expect(request).toHaveBeenCalledTimes(1);
+      expect(request).toHaveBeenCalledWith('http://localhost:11434/v1/chat/completions',
+        expect.objectContaining({ method: 'POST' }));
+      expect(proposal.modelUsed).toBe('fixture-model');
+      expect(proposal.toolCall.toolName).toBe('pay_order');
+      expect(proposal.toolCall.args).toEqual(args);
+    } finally {
+      request.mockRestore();
     }
-  }, 45000);
+  });
 });

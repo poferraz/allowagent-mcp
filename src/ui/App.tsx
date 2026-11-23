@@ -154,9 +154,9 @@ export const App: React.FC = () => {
         onProposeToolCall={handleProposeToolCall}
         agentConfig={{
           provider: settings.aiProvider,
-          apiKey: settings.aiApiKey,
-          modelName: settings.aiModel,
-          baseUrl: settings.ollamaEndpoint
+          apiKey: settings.aiProvider === 'ollama' || settings.aiProvider === 'local' ? undefined : settings.aiApiKey,
+          modelName: settings.aiProvider === 'ollama' ? settings.aiModel : undefined,
+          baseUrl: settings.aiProvider === 'ollama' ? settings.ollamaEndpoint : undefined
         }}
       />
       <main className="command-grid">

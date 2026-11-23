@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, KeyRound, X } from 'lucide-react';
 import { LivePayPalClient } from '../../paypal/live-client';
-import { loadPersistedSettings, savePersistedSettings } from '../storage';
 
 export interface ConnectionSettings {
   paypalClientId: string;
@@ -20,10 +19,7 @@ export interface ConnectionModalProps {
 
 export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSave, onClose }) => {
   const ref = useRef<HTMLDialogElement>(null);
-  const [draft, setDraft] = useState<ConnectionSettings>(() => ({
-    ...loadPersistedSettings(),
-    ...settings
-  }));
+  const [draft, setDraft] = useState<ConnectionSettings>(settings);
   const [testResult, setTestResult] = useState<{ ok?: boolean; message?: string } | null>(null);
   const [testing, setTesting] = useState(false);
 
@@ -50,9 +46,8 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
     }
   };
 
-  const handleApply = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    savePersistedSettings(draft);
+  const handleApply = (e: React.FormEvent) => {
+    e.preventDefault();
     onSave(draft);
     onClose();
   };
@@ -74,7 +69,8 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
       </div>
 
       <p className="field-note" style={{ marginTop: '10px', marginBottom: '18px' }}>
-        Configure credentials for PayPal Sandbox or connect an AI model (Ollama, Groq, Gemini, OpenAI).
+        Entered credentials are kept in memory and cleared on reload. Connecting to PayPal
+        sends its credentials to PayPal Sandbox. Cloud models receive your prompt and their own API key.
       </p>
 
       <form onSubmit={handleApply} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -119,7 +115,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
           <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>AI Model / Connector</label>
           <select
             value={draft.aiProvider}
-            onChange={e => setDraft({ ...draft, aiProvider: e.target.value as ConnectionSettings['aiProvider'] })}
+            onChange={e => setDraft({ ...draft, aiProvider: e.target.value as ConnectionSettings['aiProvider'], aiApiKey: '' })}
             style={{ width: '100%', minHeight: '40px', padding: '8px 12px', border: '1px solid #A4AFBB', borderRadius: '8px', background: '#FFF' }}
           >
             <option value="local">Built-in Financial Reasoner (Zero-Key Local Agent)</option>
@@ -172,7 +168,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ settings, onSa
 
         <div className="modal-actions" style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: '12px' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn" style={{ gap: '8px' }} onClick={() => handleApply()}><CheckCircle2 size={16} /> Save & Apply</button>
+          <button type="submit" className="btn" style={{ gap: '8px' }}><CheckCircle2 size={16} /> Save & Apply</button>
         </div>
       </form>
     </dialog>
