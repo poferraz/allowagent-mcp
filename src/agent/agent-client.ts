@@ -1,6 +1,7 @@
 import type { McpToolCall } from '../types/mcp';
 import { PAYPAL_AGENT_TOOLS } from './toolkit-schemas';
 import { runLocalReasoner } from './local-reasoner';
+import { normalizeOllamaEndpoint } from './ollama-endpoint';
 
 export { runLocalReasoner };
 
@@ -46,6 +47,8 @@ async function callOpenAiCompatible(prompt: string, endpoint: string, model: str
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
   const res = await fetch(`${endpoint.replace(/\/+$/, '')}/chat/completions`, {
     method: 'POST',
+    redirect: 'error',
+    credentials: 'omit',
     headers,
     body: JSON.stringify({
       model,
@@ -99,16 +102,19 @@ export async function generateAgentProposal(prompt: string, config?: AgentConfig
   }
 
   if (provider === 'ollama') {
-    const endpoint = config?.baseUrl || 'http://localhost:11434/v1';
-    const res = await callOpenAiCompatible(prompt, endpoint, config?.modelName ?? 'mistral-large-4:cloud', config?.apiKey);
+    const endpoint = normalizeOllamaEndpoint(config?.baseUrl || 'http://localhost:11434/v1');
+    if (!endpoint) throw new Error('Use an HTTPS Ollama endpoint or a local HTTP address, without credentials or query parameters.');
+    const res = await callOpenAiCompatible(prompt, endpoint, config?.modelName ?? 'mistral-large-4:cloud');
     if (res) return res;
   }
 
   if (provider === 'gemini' && config?.apiKey) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.apiKey}`;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      redirect: 'error',
+      credentials: 'omit',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': config.apiKey },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], tools: [{ functionDeclarations: PAYPAL_AGENT_TOOLS }] })
     });
     if (res.ok) {

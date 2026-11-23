@@ -23,3 +23,10 @@ jobs:
       - run: npm ci
       - run: npm run verify
       - run: npm run build
+      - name: Check credential handling in Chrome
+        env:
+          PLAYWRIGHT_CHROMIUM_CHANNEL: chrome
+        run: |
+          python3 -m venv "$RUNNER_TEMP/allowagent-browser"
+          "$RUNNER_TEMP/allowagent-browser/bin/pip" install -r tests/e2e/requirements.txt
+          "$RUNNER_TEMP/allowagent-browser/bin/python" tests/e2e/real_browser_test.py

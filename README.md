@@ -1,119 +1,32 @@
 # AllowAgent MCP
 
-[![CI](https://github.com/poferraz/allowagent-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/poferraz/allowagent-mcp/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+AllowAgent is a browser demo for reviewing an AI assistant’s proposed payments. Choose a sample bill or refund to see which account record supports it, which spending rule applies, and what needs your approval. Built independently for the PayPal AI Hackathon.
 
-**Your payments. Your rules.** A payment-control demo that shows how an AI assistant
-can follow spending limits, check account records, and ask before taking an unusual action.
+![Sample invoice showing the recipient, proposed amount and usual charge](docs/images/dashboard.png)
 
-Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
-Independent prototype; not an official PayPal product.
+## Try it locally
 
-![Customer payment dashboard showing a request that needs review](docs/images/dashboard.png)
+Use Node.js 22 and npm. The built-in assistant and sample account work without credentials.
 
-## Run locally
-
-Requires **Node.js 22** and npm. No API keys or PayPal account are needed.
-
-```bash
+```sh
 git clone https://github.com/poferraz/allowagent-mcp.git
 cd allowagent-mcp
 npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite (usually `http://localhost:5173`). For a production
-preview, run `npm run build`, then `npx vite preview`.
+Open the URL Vite prints. In **Personal**, select **An unexpected extra charge**. The sample invoice is $185 and the usual charge is $150. **Review payment** opens the comparison and available decisions. Selecting an example only previews it. Choosing an action updates the in-memory demo ledger. **Business** has examples for refunds, disputed deliveries and contractor payments.
 
-## Try the demo
+## My role
 
-1. Choose **Personal** or **Business** to load sample settings and requests.
-2. Select a payment example. Selection only previews the request; it never executes it.
-3. Read the recipient, amount, decision, and checks. Use the info buttons for brief explanations.
-4. For an eligible request, choose the displayed action. For an unusual request, choose
-   **Review payment** to compare amounts, approve, adjust where supported, or decline.
-5. Use **Reset demo** to restore the sample account records. Settings remain as configured.
-
-| Example | Default result |
-| --- | --- |
-| Monthly internet bill · $28 | Ready to pay |
-| An unexpected extra charge · $185 vs. $150 usual amount | Review the invoice-payment record |
-| A suspicious invoice · $140 | Blocked |
-| A shipping delay refund · $24 | Ready to refund |
-| A disputed delivery · $320 | Blocked |
-| A contractor payment · $420 | Review the invoice-payment record |
-
-Results change with the selected rules. Recording an invoice payment is distinct from
-sending a payment. All actions update the in-memory demo ledger; **no real money moves**.
+I chose to replace the original developer console with a customer dashboard. I wanted someone reviewing a bill to see the recipient, amount, reason and next action together. The technical evidence is still available on demand. I used AI assistance during development and review. One earlier implementation saved connection credentials across reloads. The dashboard now keeps credentials in memory for the current page. [Dashboard change](https://github.com/poferraz/allowagent-mcp/commit/45b7ce1d5e53685923b5e414edf749e11ea04e52)
 
 ## How it works
 
-`PAYPAL.md` is a readable rule file for payment permissions. The demo applies four checks:
+The assistant proposes an action. TypeScript checks the referenced sample records and the rules in the selected `PAYPAL.md` policy. A request can be eligible, require review, or be blocked. The execution step rechecks the request and allows a single use. The project runs as a React application with locally defined payment-tool schemas. [Sample policies](fixtures/constitutions/) · [Decision logic](src/firewall/) · [Product scope](PRODUCT.md)
 
-- **Payment details:** validate arguments and the referenced account resource.
-- **Message safety:** flag configured suspicious instruction patterns in request and account text.
-- **Account records:** compare the request with sample invoices, orders, delivery records, and history.
-- **Spending rules:** enforce permitted actions, trusted recipients, and amount limits.
+**Settings** offers an optional PayPal Sandbox credential check and model connections. The Sandbox connection test contacts PayPal. Dashboard payment and refund actions use the sample ledger. An external model receives the prompt and tool definitions from the browser when you request a proposal. The default reasoner runs locally. [Connections and privacy](SECURITY.md)
 
-The implementation separates pure evaluation from execution. Only positively verified
-requests can qualify for automatic execution, malformed rules fail closed, and execution
-uses a recomputed request digest with one-time approval consumption. Technical evidence
-is available under **View supporting details → Developer details**.
+Run `npm run verify` and `npm run build` to check a change. [Contributing](CONTRIBUTING.md)
 
-## Dual-Mode Architecture & AI Agent
-
-AllowAgent MCP bridges autonomous AI agents with PayPal spending tools through a deterministic, fail-closed firewall.
-
-1. **AI Agent Tool-Calling:** Type any natural language prompt (e.g. *"Pay Sarah's Eco Cleaning invoice for $185"*) into the top **AI Payment Assistant** bar. The agent analyzes financial intent and emits `@paypal/agent-toolkit` tool calls.
-   - Built-in Local Financial Reasoner (zero API keys required).
-   - Live Google Gemini 2.5 Flash function calling (configurable with `GEMINI_API_KEY`).
-   - Live OpenAI GPT-4o-mini tool calling (configurable with `OPENAI_API_KEY`).
-2. **Deterministic Firewall:** The 4-stage pipeline checks schemas, inspects for indirect prompt injection, cross-examines against authoritative account records, and evaluates against `PAYPAL.md`.
-3. **Dual Execution Gateways:**
-   - **Local Demo Sandbox:** Instant testing with seeded invoices, orders, delivery tracking, and rolling budgets.
-   - **Live PayPal Sandbox API:** Direct OAuth 2.0 token exchange and REST calls to `api-m.sandbox.paypal.com` (`/v2/invoicing`, `/v2/checkout/orders`, `/v2/payments/captures`).
-
-To configure live PayPal Sandbox credentials or AI model keys, click **Settings** in the header.
-
-## AI Tools & Models Disclosure (Hackathon Requirements)
-
-| Component | Tool / Model | Role in Application |
-| :--- | :--- | :--- |
-| **Autonomous Agent** | Google Gemini 2.5 Flash / OpenAI GPT-4o-mini / Local Reasoner | Translates user prompts into formal `@paypal/agent-toolkit` tool calls (`record_payment_for_invoice`, `pay_order`, `create_refund`, etc.). |
-| **Spend Firewall** | Deterministic TypeScript AST Compiler & Reference Monitor | Compiles `PAYPAL.md` constitutions, evaluates spend limits, cross-examines ledger records, and produces FIPS 180-4 SHA-256 digests. |
-| **Human Review** | React 19 Accessible Native Dialog | Displays verified historical baseline vs. proposed delta, allowing single-click baseline remediation. |
-
-## Demonstration Video
-
-- **Video Walkthrough:** [YouTube Demonstration](https://youtu.be/PLACEHOLDER_DEMO_LINK) *(Under 3 minutes, showing live AI prompt → firewall cross-examination → sandbox execution)*
-- **Demo Script:** See [`docs/DEMO.md`](docs/DEMO.md) for the complete 3-minute video recording storyboard and script.
-
-## Verify and navigate
-
-```bash
-npm run verify  # source line limits (<200 lines/file), TypeScript, and all 42 tests
-npm run build   # production bundle
-```
-
-CI runs both commands for pushes to `main` and pull requests. Each source file must stay
-below 200 lines.
-
-| Path | Purpose |
-| --- | --- |
-| `src/agent/` | Autonomous AI agent reasoner and `@paypal/agent-toolkit` schemas |
-| `src/ui/` | Dashboard, AI prompt bar, review dialog, and contextual help |
-| `src/constitution/` | Rule parser and presets |
-| `src/firewall/` | FIPS 180-4 SHA-256, validation, record checks, evaluation, and approval gate |
-| `src/paypal/` | Live PayPal Sandbox client (`api-m.sandbox.paypal.com`) and sample ledger |
-| `src/simulator/` | Sample requests and preview runner |
-| `tests/` | Domain, AI agent, cryptographic, and UI regression checks |
-
-## Contribute, security, and license
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and review expectations,
-[DESIGN.md](DESIGN.md) for the UI direction, and [PRODUCT.md](PRODUCT.md) for product context.
-Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
-
-Code is [MIT licensed](LICENSE). Bundled DM Sans fonts use the
-[SIL Open Font License](public/fonts/OFL.txt). PayPal names and marks belong to their
-respective owners and are not covered by the project's MIT license.
+The code uses the MIT licence. The bundled DM Sans fonts use the SIL Open Font License. PayPal names and marks belong to their respective owners. [Code licence](LICENSE) · [Font licence](public/fonts/OFL.txt)

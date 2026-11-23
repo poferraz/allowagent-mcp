@@ -174,6 +174,41 @@ describe('Autonomous AI Agent — Financial Tool Calling & Intent Reasoning', ()
     );
   });
 
+  it('keeps a cloud key out of a custom Ollama request', async () => {
+    const request = vi.fn().mockResolvedValue({ ok: false });
+    globalThis.fetch = request;
+    await generateAgentProposal('Pay a demo invoice', {
+      provider: 'ollama', baseUrl: 'https://inference.example/v1/', apiKey: 'test-cloud-key'
+    });
+    expect(request).toHaveBeenCalledOnce();
+    const [url, options] = request.mock.calls[0];
+    expect(url).toBe('https://inference.example/v1/chat/completions');
+    expect(options.headers).not.toHaveProperty('Authorization');
+    expect(options.redirect).toBe('error');
+  });
+
+  it.each([
+    'http://remote.example/v1', 'https://person:password@inference.example/v1',
+    'https://inference.example/v1?token=test', 'https://inference.example/v1#secret'
+  ])('rejects an unsafe custom endpoint before sending a prompt', async (baseUrl) => {
+    const request = vi.fn();
+    globalThis.fetch = request;
+    await expect(generateAgentProposal('Test', { provider: 'ollama', baseUrl })).rejects.toThrow('HTTPS');
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('sends the Gemini key only in an HTTPS request header', async () => {
+    const request = vi.fn().mockResolvedValue({ ok: false });
+    globalThis.fetch = request;
+    await generateAgentProposal('Test', { provider: 'gemini', apiKey: 'test-cloud-key' });
+    expect(request).toHaveBeenCalledWith(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'x-goog-api-key': 'test-cloud-key' }), redirect: 'error'
+      })
+    );
+  });
+
   it('correctly handles minimal, terse, and colloquial user prompts', async () => {
     // 1. "pay cleaning invoice" (no dollar sign or explicit invoice number)
     const p1 = await generateAgentProposal('pay cleaning invoice');

@@ -1,70 +1,18 @@
-# Product
+# AllowAgent product scope
 
-<!-- impeccable:product-schema 1 -->
+AllowAgent helps a person answer three questions about a proposed payment. Who receives it? How does it compare with a familiar charge? Which decision can I take now?
 
-## Platform
+## The review flow
 
-web
+Personal and Business modes provide different sample accounts and spending rules. Selecting an example evaluates it. The dashboard shows the recipient, amount, findings and next action. If the request needs review, the person opens a comparison with the verified historical amount. Some cases allow the person to amend the request to that baseline. Approving an exception applies to that request only.
 
-## Stack
+The first version used a developer console. The maintainer chose a customer-facing layout that brings payment facts and actions forward. Supporting details retain the policy, evidence and tool information for someone who wants to inspect the decision. [Dashboard implementation](src/ui/App.tsx) · [Interface guidance](DESIGN.md)
 
-React 19, TypeScript 5.7, Vite 6, Tailwind CSS, Lucide Icons, Vitest
+## What the prototype implements
 
-## Users
+- The local assistant interprets supported sample requests. Optional model providers can propose tool calls from a prompt.
+- The evaluator requires corroborating sample records, tool permissions and spending rules. Missing verification can block or pause a proposal.
+- Payments and refunds in the dashboard update sample records in memory. The optional Sandbox connection test checks credentials with PayPal.
+- The application hosts its own tool schemas and evaluator. The repository’s supported entry point is the Vite web app.
 
-1. **Enterprise FinTech & Platform Engineers:** Building autonomous payment workflows using `@paypal/agent-toolkit` and MCP (Model Context Protocol). They require deterministic, zero-hallucination runtime guardrails around financial tool execution.
-2. **SecOps & Risk Officers:** Responsible for securing AI agent deployments against indirect prompt injection, supplier invoice fraud, and unauthorized balance drain. They require verifiable audit trails and fail-closed security guarantees.
-3. **Finance Administrators & End-Users:** Overseeing autonomous spending in either Personal Wallet or Business Back-Office modes. They need human-readable spend constitutions (`PAYPAL.md`) and instant approval workflows for anomalous spend.
-
-## Product Purpose
-
-AllowAgent MCP is a Constitutional Spend Firewall and Command Center for PayPal AI Agents. It monitors autonomous tool calls conforming to `@paypal/agent-toolkit` schemas, compiles human-authored `PAYPAL.md` policies into deterministic AST spend gates, cross-examines proposed payments against authoritative PayPal Sandbox or local ledger records, and blocks indirect prompt injection before money moves.
-
-## Positioning
-
-Unlike fuzzy LLM guardrails that rely on prompt-based self-policing, AllowAgent MCP operates as a deterministic reference monitor for financial tool calls:
-- **Positive Verification:** Autonomous execution (`AUTO_EXECUTE`) is permitted strictly when authoritative PayPal read-records positively corroborate the claim.
-- **Fail-Closed Compilation:** Malformed, missing, or contradictory directives in `PAYPAL.md` immediately lock limits to `$0.00`.
-- **One-Time Hash-Bound Execution:** Evaluations produce single-use cryptographic SHA-256 digests preventing replay attacks and execution tampering.
-- **Evidence-Based Diff Modal:** Human-in-the-loop approvals show historical baseline vs. proposed delta, allowing single-click baseline remediation.
-
-## Operating Context
-
-- Operates as a governance firewall between autonomous agent runtimes (Claude, GPT, Gemini) and the PayPal API / Sandbox Ledger.
-- Integrates with `@paypal/agent-toolkit` tool schemas: `pay_order`, `record_payment_for_invoice`, `create_refund`, `accept_dispute_claim`, `update_subscription`, `create_order`, `cancel_subscription`.
-- Supports dual gateway environments: a fast in-memory sandbox ledger for instant testing, and a live PayPal Sandbox API client (`api-m.sandbox.paypal.com`) using OAuth 2.0 client credentials.
-- Includes an Autonomous AI Agent prompt interface supporting live Gemini/OpenAI tool-calling alongside a zero-configuration local financial reasoner.
-- Provides a customer-facing payment dashboard with spending settings, plain-language decisions, and optional technical evidence.
-
-## Capabilities and Constraints
-
-- **Dual Operating Modes:** Personal Wallet Mode (capped daily spend, utility invoices, subscription safeguards) and Business Back-Office Mode (vendor invoices, refund thresholds, dispute surrender protection).
-- **Pure Evaluation Previews:** Firewall evaluation is 100% pure and idempotent; state mutations occur only on explicitly verified execution.
-- **Architectural Constraint:** Every file in `src/` must remain strictly under 200 lines (`<200 lines`), enforced by automated CI scripts.
-- **Deterministic 4-Stage Pipeline:**
-  1. Schema & Syntax Validation
-  2. 3-Vector Taint & Prompt Injection Scanner
-  3. PayPal Read-vs-Write Cross-Examiner
-  4. Constitutional Spend Gate Evaluation
-
-## Brand Commitments
-
-- PayPal-inspired customer payment dashboard, guided by user-provided product references.
-- Restrained blue navigation, white surfaces, generous spacing, prominent USD amounts, and a clear action hierarchy.
-- Locally hosted, open-licensed DM Sans used consistently across the interface; it is not PayPal’s proprietary font.
-- Plain-language settings and decisions. Developer details remain available through progressive disclosure.
-- Accessible contextual help on hover, keyboard focus, and tap.
-- Independent demo identity and clear disclosure that sample payments do not move real money.
-
-## Evidence on Hand
-
-- 42 passing automated tests spanning parser compilation, 3-vector taint detection, FIPS 180-4 SHA-256 cryptographic digests, PayPal Sandbox REST client, autonomous AI tool-calling, ledger cross-examination, and UI rendering.
-- 6 pre-configured red-team scenarios reproducing real-world attack vectors (cleaner invoice price creep, spoofed vendor prompt injection, runaway refund drain, supplier wire fraud).
-- Dual execution backends: fast in-memory sandbox ledger client and live PayPal Sandbox REST client (`api-m.sandbox.paypal.com`).
-
-## Product Principles
-
-1. **Fail-Closed by Default:** Any ambiguity, parse failure, or unverified assertion reduces autonomous spend limit to zero.
-2. **Positive Verification Over Absence of Findings:** Safe verdicts require affirmative proof from PayPal read-records, not merely the absence of a detected threat.
-3. **Pure Previews, Atomic Execution:** Previewing an action must never alter ledger state; execution must be atomic and digest-verified.
-4. **Radical Transparency in Spend Diffs:** Never ask a human operator to approve an ambiguous prompt; present the exact dollar delta, historical baseline, and unapproved line items.
+The example policies and scenarios are executable inputs to the demonstration. [Policy samples](fixtures/constitutions/) · [Scenario definitions](src/simulator/scenarios.ts) · [Connections and privacy](SECURITY.md)
